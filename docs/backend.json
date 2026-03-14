@@ -50,7 +50,8 @@
         "jobTitle": { "type": "string" },
         "role": { "type": "string" },
         "isActive": { "type": "boolean" },
-        "hireDate": { "type": "string", "format": "date" }
+        "hireDate": { "type": "string", "format": "date" },
+        "hourlyRate": { "type": "number", "description": "Hourly wage for cost calculations." }
       },
       "required": ["id", "companyId", "firstName", "lastName", "email", "role", "isActive"]
     },
@@ -75,6 +76,20 @@
         "customerId": { "type": "string" }
       },
       "required": ["id", "companyId", "name", "status"]
+    },
+    "FinancialRecord": {
+      "title": "Financial Record",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "companyId": { "type": "string" },
+        "type": { "type": "string", "enum": ["revenue", "expense"] },
+        "category": { "type": "string" },
+        "amount": { "type": "number" },
+        "date": { "type": "string", "format": "date" },
+        "referenceId": { "type": "string" },
+        "description": { "type": "string" }
+      }
     }
   },
   "auth": {
@@ -112,6 +127,14 @@
           "entityName": "Job",
           "schema": { "$ref": "#/backend/entities/Job" },
           "description": "Job/project details specific to a company."
+        }
+      },
+      {
+        "path": "/companies/{companyId}/finance/{recordId}",
+        "definition": {
+          "entityName": "FinancialRecord",
+          "schema": { "$ref": "#/backend/entities/FinancialRecord" },
+          "description": "Company financial transactions."
         }
       }
     ]

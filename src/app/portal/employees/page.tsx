@@ -18,7 +18,8 @@ import {
   Shield,
   UserX,
   Trash2,
-  Edit2
+  Edit2,
+  DollarSign
 } from 'lucide-react';
 import { useFirestore, useCollection, useMemoFirebase, useUser, useDoc } from '@/firebase';
 import { collection, doc, deleteDoc, updateDoc, addDoc, serverTimestamp } from 'firebase/firestore';
@@ -66,7 +67,8 @@ export default function EmployeesPage() {
     lastName: '',
     email: '',
     role: 'employee',
-    jobTitle: ''
+    jobTitle: '',
+    hourlyRate: '500'
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -77,6 +79,7 @@ export default function EmployeesPage() {
       const colRef = collection(firestore, 'companies', companyId, 'employees');
       await addDoc(colRef, {
         ...inviteData,
+        hourlyRate: Number(inviteData.hourlyRate),
         companyId,
         isActive: true,
         createdAt: new Date().toISOString(),
@@ -89,7 +92,7 @@ export default function EmployeesPage() {
         description: `${inviteData.firstName} byl úspěšně přidán do systému.`
       });
       setIsInviteOpen(false);
-      setInviteData({ firstName: '', lastName: '', email: '', role: 'employee', jobTitle: '' });
+      setInviteData({ firstName: '', lastName: '', email: '', role: 'employee', jobTitle: '', hourlyRate: '500' });
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -145,15 +148,15 @@ export default function EmployeesPage() {
         <div className="flex gap-3">
           <Dialog open={isInviteOpen} onOpenChange={setIsInviteOpen}>
             <DialogTrigger asChild>
-              <Button className="gap-2">
+              <Button className="gap-2 shadow-lg shadow-primary/20">
                 <UserPlus className="w-4 h-4" /> Pozvat zaměstnance
               </Button>
             </DialogTrigger>
-            <DialogContent className="bg-surface border-border">
+            <DialogContent className="bg-surface border-border max-w-xl">
               <DialogHeader>
                 <DialogTitle>Pozvat nového člena týmu</DialogTitle>
                 <DialogDescription>
-                  Vyplňte údaje pro vytvoření profilu zaměstnance.
+                  Vyplňte údaje pro vytvoření profilu zaměstnance a nastavení jeho mzdových nákladů.
                 </DialogDescription>
               </DialogHeader>
               <form onSubmit={handleInvite} className="space-y-4 py-4">
@@ -216,6 +219,21 @@ export default function EmployeesPage() {
                     />
                   </div>
                 </div>
+                <div className="space-y-2">
+                  <Label htmlFor="hourlyRate">Hodinová sazba (Kč/h)</Label>
+                  <div className="relative">
+                    <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input 
+                      id="hourlyRate" 
+                      type="number"
+                      placeholder="500" 
+                      value={inviteData.hourlyRate} 
+                      onChange={e => setInviteData({...inviteData, hourlyRate: e.target.value})}
+                      className="bg-background pl-10"
+                    />
+                  </div>
+                  <p className="text-[10px] text-muted-foreground">Tato sazba se používá pro výpočet finančních nákladů firmy.</p>
+                </div>
                 <DialogFooter>
                   <Button type="submit" disabled={isSubmitting} className="w-full">
                     {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Vytvořit profil"}
@@ -254,6 +272,7 @@ export default function EmployeesPage() {
                   <TableHead className="pl-6">Zaměstnanec</TableHead>
                   <TableHead>Role</TableHead>
                   <TableHead>Pozice</TableHead>
+                  <TableHead>Sazba</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="pr-6 text-right">Akce</TableHead>
                 </TableRow>
@@ -277,6 +296,9 @@ export default function EmployeesPage() {
                     </TableCell>
                     <TableCell>{emp.jobTitle}</TableCell>
                     <TableCell>
+                      <span className="font-mono text-xs">{emp.hourlyRate || 500} Kč/h</span>
+                    </TableCell>
+                    <TableCell>
                       <Badge variant={emp.isActive ? 'default' : 'secondary'} className="capitalize">
                         {emp.isActive ? 'Aktivní' : 'Neaktivní'}
                       </Badge>
@@ -294,7 +316,7 @@ export default function EmployeesPage() {
                           <DropdownMenuSeparator />
                           <DropdownMenuLabel className="text-[10px] text-muted-foreground uppercase">Změnit roli</DropdownMenuLabel>
                           <DropdownMenuItem onClick={() => changeRole(emp.id, 'admin')}>Administrátor</DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => changeRole(emp.id, 'manager')}>Manažer</SelectItem>
+                          <DropdownMenuItem onClick={() => changeRole(emp.id, 'manager')}>Manažer</DropdownMenuItem>
                           <DropdownMenuItem onClick={() => changeRole(emp.id, 'employee')}>Zaměstnanec</DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem className="text-destructive" onClick={() => deleteEmployee(emp.id)}>
