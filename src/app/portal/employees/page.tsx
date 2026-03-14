@@ -20,7 +20,9 @@ import {
   Trash2,
   Edit2,
   DollarSign,
-  AlertTriangle
+  AlertTriangle,
+  KeyRound,
+  RefreshCw
 } from 'lucide-react';
 import { useFirestore, useCollection, useMemoFirebase, useUser, useDoc } from '@/firebase';
 import { collection, doc, deleteDoc, updateDoc, addDoc, serverTimestamp } from 'firebase/firestore';
@@ -130,6 +132,29 @@ export default function EmployeesPage() {
       });
     } catch (error) {
       toast({ variant: "destructive", title: "Chyba při aktualizaci" });
+    }
+  };
+
+  const generatePin = async (employeeId: string) => {
+    if (!canManage) return;
+    const newPin = Math.floor(1000 + Math.random() * 9000).toString();
+    try {
+      const docRef = doc(firestore, 'companies', companyId, 'employees', employeeId);
+      await updateDoc(docRef, { attendancePin: newPin });
+      toast({ title: "PIN vygenerován", description: `Nový docházkový PIN pro zaměstnance: ${newPin}` });
+    } catch (error) {
+      toast({ variant: "destructive", title: "Chyba" });
+    }
+  };
+
+  const disablePin = async (employeeId: string) => {
+    if (!canManage) return;
+    try {
+      const docRef = doc(firestore, 'companies', companyId, 'employees', employeeId);
+      await updateDoc(docRef, { attendancePin: null });
+      toast({ title: "PIN deaktivován" });
+    } catch (error) {
+      toast({ variant: "destructive", title: "Chyba" });
     }
   };
 
@@ -293,8 +318,7 @@ export default function EmployeesPage() {
                 <TableRow className="border-border hover:bg-transparent">
                   <TableHead className="pl-6">Zaměstnanec</TableHead>
                   <TableHead>Role</TableHead>
-                  <TableHead>Pozice</TableHead>
-                  <TableHead>Sazba</TableHead>
+                  <TableHead>Sazba / PIN</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="pr-6 text-right">Akce</TableHead>
                 </TableRow>
@@ -316,9 +340,17 @@ export default function EmployeesPage() {
                          emp.role === 'accountant' ? 'Účetní' : 'Zaměstnanec'}
                       </Badge>
                     </TableCell>
-                    <TableCell>{emp.jobTitle}</TableCell>
                     <TableCell>
-                      <span className="font-mono text-xs">{emp.hourlyRate || 500} Kč/h</span>
+                      <div className="flex flex-col gap-1">
+                        <span className="font-mono text-xs">{emp.hourlyRate || 500} Kč/h</span>
+                        {emp.attendancePin ? (
+                          <div className="flex items-center gap-1.5 text-[10px] text-emerald-500 font-bold uppercase">
+                            <KeyRound className="w-3 h-3" /> PIN: {emp.attendancePin}
+                          </div>
+                        ) : (
+                          <span className="text-[10px] text-muted-foreground uppercase">Bez PINu</span>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell>
                       <Badge variant={emp.isActive ? 'default' : 'secondary'} className="capitalize">
@@ -331,16 +363,26 @@ export default function EmployeesPage() {
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon"><MoreVertical className="w-4 h-4" /></Button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="bg-surface border-border">
-                            <DropdownMenuLabel>Možnosti</DropdownMenuLabel>
+                          <DropdownMenuContent align="end" className="bg-surface border-border w-56">
+                            <DropdownMenuLabel>Správa uživatele</DropdownMenuLabel>
                             <DropdownMenuItem onClick={() => toggleEmployeeStatus(emp.id, emp.isActive)}>
                               <UserX className="w-4 h-4 mr-2" /> {emp.isActive ? 'Deaktivovat' : 'Aktivovat'}
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
+                            <DropdownMenuLabel className="text-[10px] text-muted-foreground uppercase">Docházkový PIN</DropdownMenuLabel>
+                            <DropdownMenuItem onClick={() => generatePin(emp.id)}>
+                              <RefreshCw className="w-4 h-4 mr-2" /> {emp.attendancePin ? 'Resetovat PIN' : 'Generovat PIN'}
+                            </DropdownMenuItem>
+                            {emp.attendancePin && (
+                              <DropdownMenuItem onClick={() => disablePin(emp.id)} className="text-rose-500">
+                                <Shield className="w-4 h-4 mr-2" /> Zakázat PIN
+                              </DropdownMenuItem>
+                            )}
+                            <DropdownMenuSeparator />
                             <DropdownMenuLabel className="text-[10px] text-muted-foreground uppercase">Změnit roli</DropdownMenuLabel>
                             <DropdownMenuItem onClick={() => changeRole(emp.id, 'admin')}>Administrátor</DropdownMenuItem>
                             <DropdownMenuItem onClick={() => changeRole(emp.id, 'manager')}>Manažer</DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => changeRole(emp.id, 'employee')}>Zaměstnanec</SelectItem>
+                            <DropdownMenuItem onClick={() => changeRole(emp.id, 'employee')}>Zaměstnanec</DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem className="text-destructive" onClick={() => deleteEmployee(emp.id)}>
                               <Trash2 className="w-4 h-4 mr-2" /> Odstranit

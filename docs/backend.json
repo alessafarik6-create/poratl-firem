@@ -80,7 +80,8 @@
         "role": { "type": "string" },
         "jobTitle": { "type": "string" },
         "hourlyRate": { "type": "number" },
-        "isActive": { "type": "boolean" }
+        "isActive": { "type": "boolean" },
+        "attendancePin": { "type": "string", "description": "4-digit PIN for quick attendance tracking." }
       }
     },
     "Customer": {
