@@ -15,7 +15,9 @@
         "createdAt": { "type": "string", "format": "date-time" },
         "isActive": { "type": "boolean" },
         "licenseId": { "type": "string" },
-        "ownerUserId": { "type": "string" }
+        "ownerUserId": { "type": "string" },
+        "ico": { "type": "string" },
+        "enabledModuleIds": { "type": "array", "items": { "type": "string" } }
       },
       "required": ["id", "name", "email", "createdAt", "isActive", "ownerUserId"]
     },
@@ -34,6 +36,32 @@
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["id", "email", "displayName", "globalRoles", "createdAt"]
+    },
+    "License": {
+      "title": "License",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "plan": { "type": "string", "enum": ["starter", "professional", "enterprise"] },
+        "monthlyPrice": { "type": "number" },
+        "usersLimit": { "type": "number" },
+        "modulesEnabled": { "type": "array", "items": { "type": "string" } },
+        "description": { "type": "string" }
+      }
+    },
+    "PlatformInvoice": {
+      "title": "Platform Invoice",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "organizationId": { "type": "string" },
+        "licenseId": { "type": "string" },
+        "amount": { "type": "number" },
+        "status": { "type": "string", "enum": ["draft", "sent", "paid"] },
+        "dueDate": { "type": "string", "format": "date" },
+        "period": { "type": "string" }
+      }
     },
     "Employee": {
       "title": "Employee",
@@ -74,48 +102,6 @@
         "budget": { "type": "number" },
         "assignedEmployeeIds": { "type": "array", "items": { "type": "string" } }
       }
-    },
-    "Document": {
-      "title": "Document",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "type": { "type": "string", "enum": ["received", "issued"] },
-        "number": { "type": "string" },
-        "entityName": { "type": "string", "description": "Supplier or Customer name" },
-        "amount": { "type": "number" },
-        "vat": { "type": "number" },
-        "date": { "type": "string", "format": "date" },
-        "description": { "type": "string" },
-        "createdBy": { "type": "string" }
-      }
-    },
-    "Invoice": {
-      "title": "Invoice",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "customerId": { "type": "string" },
-        "invoiceNumber": { "type": "string" },
-        "issueDate": { "type": "string", "format": "date" },
-        "dueDate": { "type": "string", "format": "date" },
-        "totalAmount": { "type": "number" },
-        "vat": { "type": "number" },
-        "status": { "type": "string", "enum": ["draft", "sent", "paid"] },
-        "items": { "type": "array" }
-      }
-    },
-    "FinancialRecord": {
-      "title": "Financial Record",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "companyId": { "type": "string" },
-        "type": { "type": "string", "enum": ["revenue", "expense"] },
-        "amount": { "type": "number" },
-        "date": { "type": "string", "format": "date" },
-        "description": { "type": "string" }
-      }
     }
   },
   "auth": {
@@ -140,6 +126,22 @@
         }
       },
       {
+        "path": "/licenses/{licenseId}",
+        "definition": {
+          "entityName": "License",
+          "schema": { "$ref": "#/backend/entities/License" },
+          "description": "Platform subscription plans."
+        }
+      },
+      {
+        "path": "/platform_invoices/{invoiceId}",
+        "definition": {
+          "entityName": "PlatformInvoice",
+          "schema": { "$ref": "#/backend/entities/PlatformInvoice" },
+          "description": "Invoices from BizForge to customer companies."
+        }
+      },
+      {
         "path": "/companies/{companyId}/employees/{employeeId}",
         "definition": {
           "entityName": "Employee",
@@ -161,30 +163,6 @@
           "entityName": "Job",
           "schema": { "$ref": "#/backend/entities/Job" },
           "description": "Job/project details specific to a company."
-        }
-      },
-      {
-        "path": "/companies/{companyId}/documents/{docId}",
-        "definition": {
-          "entityName": "Document",
-          "schema": { "$ref": "#/backend/entities/Document" },
-          "description": "Company business documents (received/issued)."
-        }
-      },
-      {
-        "path": "/companies/{companyId}/invoices/{invoiceId}",
-        "definition": {
-          "entityName": "Invoice",
-          "schema": { "$ref": "#/backend/entities/Invoice" },
-          "description": "Company invoices issued to customers."
-        }
-      },
-      {
-        "path": "/companies/{companyId}/finance/{recordId}",
-        "definition": {
-          "entityName": "FinancialRecord",
-          "schema": { "$ref": "#/backend/entities/FinancialRecord" },
-          "description": "Company financial transactions."
         }
       }
     ]
