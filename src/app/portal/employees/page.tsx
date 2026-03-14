@@ -1,20 +1,14 @@
-
 "use client";
 
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import React from 'react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Plus, Search, Filter, Sparkles, Download } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { generateEmployeePerformanceReport } from '@/ai/flows/generate-employee-performance-report-flow';
+import { Plus, Search, Filter, Download } from 'lucide-react';
 
 export default function EmployeesPage() {
-  const { toast } = useToast();
-  const [isGenerating, setIsGenerating] = useState(false);
-
   const employees = [
     { id: '1', name: 'Alex Thompson', role: 'Lead Developer', status: 'active', email: 'alex@nebula.tech', joined: 'Jan 2022' },
     { id: '2', name: 'Sarah Miller', role: 'Product Designer', status: 'active', email: 'sarah@nebula.tech', joined: 'Mar 2023' },
@@ -22,32 +16,6 @@ export default function EmployeesPage() {
     { id: '4', name: 'Emily Chen', role: 'Accountant', status: 'on_leave', email: 'emily@nebula.tech', joined: 'Jun 2023' },
     { id: '5', name: 'David Lee', role: 'DevOps Engineer', status: 'active', email: 'david@nebula.tech', joined: 'Nov 2022' },
   ];
-
-  const handleAiReport = async () => {
-    setIsGenerating(true);
-    try {
-      // Simulate real report generation using the provided genkit flow
-      const report = await generateEmployeePerformanceReport({
-        employeeNames: ['Alex Thompson'],
-        reportContext: "Alex has 98% attendance, completed 24 tickets this sprint, and received 5 peer praises.",
-        reportPurpose: "Annual performance review",
-        reportType: "individual"
-      });
-      
-      toast({
-        title: "AI Report Generated",
-        description: `Strength: ${report.strengths[0]}`,
-      });
-    } catch (e) {
-      toast({
-        title: "Generation Failed",
-        variant: "destructive",
-        description: "Could not generate report at this time.",
-      });
-    } finally {
-      setIsGenerating(false);
-    }
-  };
 
   return (
     <div className="space-y-8">
@@ -57,10 +25,6 @@ export default function EmployeesPage() {
           <p className="text-muted-foreground mt-2">Manage your workforce, roles, and performance insights.</p>
         </div>
         <div className="flex gap-3">
-          <Button variant="outline" className="gap-2" onClick={handleAiReport} disabled={isGenerating}>
-            <Sparkles className={`w-4 h-4 text-primary ${isGenerating ? 'animate-spin' : ''}`} /> 
-            {isGenerating ? 'Analyzing...' : 'AI Performance Report'}
-          </Button>
           <Button className="gap-2">
             <Plus className="w-4 h-4" /> Add Employee
           </Button>

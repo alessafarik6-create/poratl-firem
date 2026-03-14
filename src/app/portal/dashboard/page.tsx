@@ -1,4 +1,3 @@
-
 "use client";
 
 import React from 'react';
@@ -7,8 +6,6 @@ import {
   Briefcase, 
   Clock, 
   Wallet,
-  Sparkles,
-  CheckCircle2,
   Calendar
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -109,25 +106,6 @@ export default function CompanyDashboard() {
                 </div>
               ))}
             </CardContent>
-          </Card>
-
-          <Card className="bg-primary/5 border-primary/20 relative overflow-hidden">
-             <div className="absolute top-0 right-0 p-8 opacity-10">
-               <Sparkles className="w-24 h-24 text-primary" />
-             </div>
-             <CardHeader>
-               <CardTitle className="flex items-center gap-2 text-primary">
-                 <Sparkles className="w-5 h-5" /> AI Performance Insight
-               </CardTitle>
-             </CardHeader>
-             <CardContent>
-               <p className="text-lg leading-relaxed">
-                 Nebula Tech is showing <span className="font-bold text-white">exceptional growth</span> in attendance consistency this month. 
-                 However, "Marketing Campaign" is falling behind. Recommendation: Reassign 2 available employees from completed 
-                 tasks to expedite the campaign phase.
-               </p>
-               <Button className="mt-6 bg-primary hover:bg-secondary">View Full AI Report</Button>
-             </CardContent>
           </Card>
         </div>
 
