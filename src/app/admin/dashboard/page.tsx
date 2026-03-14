@@ -6,7 +6,6 @@ import {
   Building2, 
   Users, 
   ShieldCheck, 
-  TrendingUp, 
   CreditCard,
   ArrowUpRight,
   ArrowDownRight
@@ -17,25 +16,25 @@ import { Badge } from '@/components/ui/badge';
 
 export default function AdminDashboard() {
   const stats = [
-    { title: 'Total Companies', value: '1,284', icon: Building2, change: '+12%', positive: true },
-    { title: 'Active Licenses', value: '45,201', icon: ShieldCheck, change: '+5%', positive: true },
-    { title: 'Monthly Revenue', value: '$284,500', icon: CreditCard, change: '+18%', positive: true },
-    { title: 'Active Users', value: '124.5k', icon: Users, change: '-2%', positive: false },
+    { title: 'Celkem firem', value: '1,284', icon: Building2, change: '+12%', positive: true },
+    { title: 'Aktivní licence', value: '45,201', icon: ShieldCheck, change: '+5%', positive: true },
+    { title: 'Měsíční obrat', value: '284 500 Kč', icon: CreditCard, change: '+18%', positive: true },
+    { title: 'Aktivní uživatelé', value: '124.5k', icon: Users, change: '-2%', positive: false },
   ];
 
   const recentCompanies = [
-    { id: '1', name: 'Nebula Tech', owner: 'Alex Rivera', plan: 'Enterprise', status: 'active', rev: '$2,400' },
-    { id: '2', name: 'Zest Marketing', owner: 'Sarah Chen', plan: 'Professional', status: 'active', rev: '$1,200' },
-    { id: '3', name: 'Iron Forge Mfg', owner: 'Tom Hardy', plan: 'Starter', status: 'pending', rev: '$450' },
-    { id: '4', name: 'Vertex Solutions', owner: 'Elena Popa', plan: 'Enterprise', status: 'suspended', rev: '$0' },
-    { id: '5', name: 'Swift Logistics', owner: 'James Bond', plan: 'Professional', status: 'active', rev: '$1,200' },
+    { id: '1', name: 'Nebula Tech', owner: 'Alex Rivera', plan: 'Enterprise', status: 'active', rev: '2 400 Kč' },
+    { id: '2', name: 'Zest Marketing', owner: 'Sarah Chen', plan: 'Professional', status: 'active', rev: '1 200 Kč' },
+    { id: '3', name: 'Iron Forge Mfg', owner: 'Tom Hardy', plan: 'Starter', status: 'pending', rev: '450 Kč' },
+    { id: '4', name: 'Vertex Solutions', owner: 'Elena Popa', plan: 'Enterprise', status: 'suspended', rev: '0 Kč' },
+    { id: '5', name: 'Swift Logistics', owner: 'James Bond', plan: 'Professional', status: 'active', rev: '1 200 Kč' },
   ];
 
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-bold">Platform Overview</h1>
-        <p className="text-muted-foreground mt-2">Welcome back, Super Admin. Here's what's happening across the platform.</p>
+        <h1 className="text-3xl font-bold">Přehled Platformy</h1>
+        <p className="text-muted-foreground mt-2">Vítejte zpět, Super Administrátore. Zde je přehled dění na platformě.</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -49,7 +48,7 @@ export default function AdminDashboard() {
               <div className="text-2xl font-bold">{stat.value}</div>
               <div className={`flex items-center text-xs mt-1 ${stat.positive ? 'text-emerald-500' : 'text-rose-500'}`}>
                 {stat.positive ? <ArrowUpRight className="w-3 h-3 mr-1" /> : <ArrowDownRight className="w-3 h-3 mr-1" />}
-                {stat.change} from last month
+                {stat.change} oproti minulému měsíci
               </div>
             </CardContent>
           </Card>
@@ -59,17 +58,17 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <Card className="lg:col-span-2 bg-surface border-border">
           <CardHeader>
-            <CardTitle>Recent Companies</CardTitle>
+            <CardTitle>Nedávné Společnosti</CardTitle>
           </CardHeader>
           <CardContent>
             <Table>
               <TableHeader>
                 <TableRow className="border-border/50">
-                  <TableHead>Company</TableHead>
-                  <TableHead>Owner</TableHead>
-                  <TableHead>Plan</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Monthly Rev</TableHead>
+                  <TableHead>Firma</TableHead>
+                  <TableHead>Vlastník</TableHead>
+                  <TableHead>Tarif</TableHead>
+                  <TableHead>Stav</TableHead>
+                  <TableHead className="text-right">Měsíční obrat</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -87,7 +86,7 @@ export default function AdminDashboard() {
                         variant={company.status === 'active' ? 'default' : company.status === 'suspended' ? 'destructive' : 'secondary'}
                         className="capitalize"
                       >
-                        {company.status}
+                        {company.status === 'active' ? 'Aktivní' : company.status === 'suspended' ? 'Pozastaveno' : 'Čeká'}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">{company.rev}</TableCell>
@@ -100,13 +99,13 @@ export default function AdminDashboard() {
 
         <Card className="bg-surface border-border">
           <CardHeader>
-            <CardTitle>Revenue by Plan</CardTitle>
+            <CardTitle>Příjmy podle tarifu</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
                 <span>Enterprise</span>
-                <span className="font-bold">$184,200</span>
+                <span className="font-bold">184 200 Kč</span>
               </div>
               <div className="h-2 bg-muted rounded-full overflow-hidden">
                 <div className="h-full bg-primary w-[65%]" />
@@ -115,7 +114,7 @@ export default function AdminDashboard() {
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
                 <span>Professional</span>
-                <span className="font-bold">$82,400</span>
+                <span className="font-bold">82 400 Kč</span>
               </div>
               <div className="h-2 bg-muted rounded-full overflow-hidden">
                 <div className="h-full bg-primary w-[29%]" />
@@ -124,7 +123,7 @@ export default function AdminDashboard() {
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
                 <span>Starter</span>
-                <span className="font-bold">$17,900</span>
+                <span className="font-bold">17 900 Kč</span>
               </div>
               <div className="h-2 bg-muted rounded-full overflow-hidden">
                 <div className="h-full bg-primary w-[6%]" />

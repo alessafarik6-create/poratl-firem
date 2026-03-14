@@ -27,7 +27,6 @@ export const BizForgeSidebar = () => {
   const { user } = useUser();
   const firestore = useFirestore();
 
-  // Fetch user profile to check global roles
   const userRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
   const { data: userProfile } = useDoc(userRef);
 
@@ -35,22 +34,22 @@ export const BizForgeSidebar = () => {
   const isAdminArea = pathname.startsWith('/admin');
   
   const adminLinks = [
-    { label: 'Overview', href: '/admin/dashboard', icon: LayoutDashboard },
-    { label: 'Organizations', href: '/admin/companies', icon: Building2 },
-    { label: 'Licenses', href: '/admin/licenses', icon: ShieldCheck },
-    { label: 'Billing', href: '/admin/billing', icon: CreditCard },
+    { label: 'Přehled', href: '/admin/dashboard', icon: LayoutDashboard },
+    { label: 'Organizace', href: '/admin/companies', icon: Building2 },
+    { label: 'Licence', href: '/admin/licenses', icon: ShieldCheck },
+    { label: 'Fakturace', href: '/admin/billing', icon: CreditCard },
   ];
 
   const portalLinks = [
-    { label: 'Dashboard', href: '/portal/dashboard', icon: LayoutDashboard },
-    { label: 'Employees', href: '/portal/employees', icon: Users },
-    { label: 'Customers', href: '/portal/customers', icon: UserCircle },
-    { label: 'Jobs', href: '/portal/jobs', icon: Briefcase },
-    { label: 'Attendance', href: '/portal/attendance', icon: Clock },
+    { label: 'Přehled', href: '/portal/dashboard', icon: LayoutDashboard },
+    { label: 'Zaměstnanci', href: '/portal/employees', icon: Users },
+    { label: 'Zákazníci', href: '/portal/customers', icon: UserCircle },
+    { label: 'Zakázky', href: '/portal/jobs', icon: Briefcase },
+    { label: 'Docházka', href: '/portal/attendance', icon: Clock },
     { label: 'Finance', href: '/portal/finance', icon: Wallet },
-    { label: 'Chat', href: '/portal/chat', icon: MessageSquare },
-    { label: 'Documents', href: '/portal/documents', icon: FileText },
-    { label: 'Settings', href: '/portal/settings', icon: Settings },
+    { label: 'Zprávy', href: '/portal/chat', icon: MessageSquare },
+    { label: 'Dokumenty', href: '/portal/documents', icon: FileText },
+    { label: 'Nastavení', href: '/portal/settings', icon: Settings },
   ];
 
   const links = isAdminArea ? adminLinks : portalLinks;
@@ -66,7 +65,7 @@ export const BizForgeSidebar = () => {
 
       <nav className="flex-1 px-4 space-y-1">
         <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4 px-2">
-          {isAdminArea ? 'Platform Admin' : 'Company Portal'}
+          {isAdminArea ? 'Administrace Platformy' : 'Firemní Portál'}
         </div>
         {links.map((link) => (
           <Link
@@ -92,7 +91,7 @@ export const BizForgeSidebar = () => {
             className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors px-3 py-2"
           >
             <ShieldCheck className="w-4 h-4" />
-            Switch to {isAdminArea ? 'Portal' : 'Admin'}
+            Přepnout na {isAdminArea ? 'Portál' : 'Admin'}
           </Link>
         )}
       </div>

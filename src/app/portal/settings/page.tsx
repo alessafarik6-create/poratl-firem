@@ -22,40 +22,40 @@ export default function SettingsPage() {
   return (
     <div className="max-w-4xl mx-auto space-y-8">
       <div>
-        <h1 className="text-3xl font-bold">Settings</h1>
-        <p className="text-muted-foreground mt-2">Manage your account and organization preferences.</p>
+        <h1 className="text-3xl font-bold">Nastavení</h1>
+        <p className="text-muted-foreground mt-2">Spravujte svůj účet a preference organizace.</p>
       </div>
 
       <Tabs defaultValue="profile" className="w-full">
         <TabsList className="bg-surface border border-border w-full justify-start h-12 p-1">
-          <TabsTrigger value="profile">Profile</TabsTrigger>
-          <TabsTrigger value="organization">Organization</TabsTrigger>
-          <TabsTrigger value="notifications">Notifications</TabsTrigger>
-          <TabsTrigger value="security">Security</TabsTrigger>
+          <TabsTrigger value="profile">Profil</TabsTrigger>
+          <TabsTrigger value="organization">Organizace</TabsTrigger>
+          <TabsTrigger value="notifications">Oznámení</TabsTrigger>
+          <TabsTrigger value="security">Zabezpečení</TabsTrigger>
         </TabsList>
 
         <TabsContent value="profile" className="mt-6">
           <Card className="bg-surface border-border">
             <CardHeader>
-              <CardTitle>Personal Information</CardTitle>
-              <CardDescription>Update your name and profile details.</CardDescription>
+              <CardTitle>Osobní informace</CardTitle>
+              <CardDescription>Aktualizujte své jméno a profilové údaje.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Full Name</Label>
-                  <Input defaultValue={profile?.displayName || ''} placeholder="Jane Doe" className="bg-background" />
+                  <Label>Celé jméno</Label>
+                  <Input defaultValue={profile?.displayName || ''} placeholder="Jan Novák" className="bg-background" />
                 </div>
                 <div className="space-y-2">
-                  <Label>Email Address</Label>
+                  <Label>Emailová adresa</Label>
                   <Input defaultValue={user?.email || ''} readOnly className="bg-background opacity-70" />
                 </div>
               </div>
               <div className="space-y-2">
-                <Label>Job Title</Label>
-                <Input placeholder="Operations Manager" className="bg-background" />
+                <Label>Pracovní pozice</Label>
+                <Input placeholder="Provozní manažer" className="bg-background" />
               </div>
-              <Button className="w-fit">Save Changes</Button>
+              <Button className="w-fit">Uložit změny</Button>
             </CardContent>
           </Card>
         </TabsContent>
@@ -63,27 +63,27 @@ export default function SettingsPage() {
         <TabsContent value="organization" className="mt-6">
           <Card className="bg-surface border-border">
             <CardHeader>
-              <CardTitle>Organization Profile</CardTitle>
-              <CardDescription>Configure your company details and tenant settings.</CardDescription>
+              <CardTitle>Profil organizace</CardTitle>
+              <CardDescription>Nakonfigurujte podrobnosti o vaší společnosti.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-2">
-                <Label>Company Name</Label>
+                <Label>Název společnosti</Label>
                 <Input defaultValue="Nebula Tech Solutions" className="bg-background" />
               </div>
               <div className="space-y-2">
-                <Label>Primary Domain</Label>
+                <Label>Primární doména</Label>
                 <Input defaultValue="nebulatech.io" className="bg-background" />
               </div>
               <Separator className="bg-border" />
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label>Public Profile</Label>
-                  <p className="text-xs text-muted-foreground">Allow others to find your organization on the platform.</p>
+                  <Label>Veřejný profil</Label>
+                  <p className="text-xs text-muted-foreground">Umožněte ostatním najít vaši organizaci na platformě.</p>
                 </div>
                 <Switch />
               </div>
-              <Button className="w-fit">Update Organization</Button>
+              <Button className="w-fit">Aktualizovat organizaci</Button>
             </CardContent>
           </Card>
         </TabsContent>
@@ -91,20 +91,20 @@ export default function SettingsPage() {
         <TabsContent value="notifications" className="mt-6">
           <Card className="bg-surface border-border">
             <CardHeader>
-              <CardTitle>Notification Preferences</CardTitle>
-              <CardDescription>Choose how you want to be alerted about platform activity.</CardDescription>
+              <CardTitle>Předvolby oznámení</CardTitle>
+              <CardDescription>Vyberte si, jak chcete být upozorňováni na aktivitu.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
-                <Label>Email Notifications</Label>
+                <Label>Emailová oznámení</Label>
                 <Switch defaultChecked />
               </div>
               <div className="flex items-center justify-between">
-                <Label>New Message Alerts</Label>
+                <Label>Upozornění na nové zprávy</Label>
                 <Switch defaultChecked />
               </div>
               <div className="flex items-center justify-between">
-                <Label>Attendance Reminders</Label>
+                <Label>Připomenutí docházky</Label>
                 <Switch />
               </div>
             </CardContent>

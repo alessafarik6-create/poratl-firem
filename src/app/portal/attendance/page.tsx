@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -14,26 +14,32 @@ export default function AttendancePage() {
   const { user } = useUser();
   const firestore = useFirestore();
   const [activeShift, setActiveShift] = useState(false);
+  const [currentTime, setCurrentTime] = useState<string | null>(null);
+
+  useEffect(() => {
+    const updateTime = () => {
+      setCurrentTime(new Date().toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }));
+    };
+    updateTime();
+    const timer = setInterval(updateTime, 10000);
+    return () => clearInterval(timer);
+  }, []);
   
-  // Fetch user profile to check roles
   const userRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
   const { data: profile } = useDoc(userRef);
 
-  // For a real app, we'd fetch actual attendance records here
   const attendanceQuery = useMemoFirebase(() => {
     if (!user) return null;
-    // Note: In a real multi-tenant app, we'd use the companyId from the user's role
-    // For now, we'll assume a path like /companies/nebula-tech/attendance
     return collection(firestore, 'companies', 'nebula-tech', 'attendance');
   }, [firestore, user]);
 
   const { data: historyData, isLoading: isHistoryLoading } = useCollection(attendanceQuery);
 
   const history = [
-    { date: '2024-05-20', in: '09:02 AM', out: '05:30 PM', total: '8h 28m', status: 'Present' },
-    { date: '2024-05-19', in: '08:55 AM', out: '06:15 PM', total: '9h 20m', status: 'Overtime' },
-    { date: '2024-05-18', in: '09:15 AM', out: '05:00 PM', total: '7h 45m', status: 'Under-time' },
-    { date: '2024-05-17', in: '-', out: '-', total: '-', status: 'Absent' },
+    { date: '20.05.2024', in: '09:02', out: '17:30', total: '8h 28m', status: 'Přítomen' },
+    { date: '19.05.2024', in: '08:55', out: '18:15', total: '9h 20m', status: 'Přesčas' },
+    { date: '18.05.2024', in: '09:15', out: '17:00', total: '7h 45m', status: 'Nedostatek' },
+    { date: '17.05.2024', in: '-', out: '-', total: '-', status: 'Nepřítomen' },
   ];
 
   const isAdmin = profile?.globalRoles?.includes('super_admin') || profile?.globalRoles?.includes('admin');
@@ -42,28 +48,28 @@ export default function AttendancePage() {
     <div className="space-y-8">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">Attendance & Time Tracking</h1>
-          <p className="text-muted-foreground mt-2">Manage your daily work hours and shifts.</p>
+          <h1 className="text-3xl font-bold">Docházka a sledování času</h1>
+          <p className="text-muted-foreground mt-2">Spravujte svou denní pracovní dobu a směny.</p>
         </div>
         <div className="text-right">
-          <p className="text-2xl font-mono font-bold">10:45 AM</p>
-          <p className="text-sm text-muted-foreground">Tuesday, May 21 2024</p>
+          <p className="text-2xl font-mono font-bold">{currentTime || '--:--'}</p>
+          <p className="text-sm text-muted-foreground">{new Date().toLocaleDateString('cs-CZ', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <Card className="bg-surface border-border flex flex-col justify-between">
           <CardHeader>
-            <CardTitle>Current Status</CardTitle>
-            <CardDescription>Start or end your daily shift</CardDescription>
+            <CardTitle>Aktuální stav</CardTitle>
+            <CardDescription>Začněte nebo ukončete svou denní směnu</CardDescription>
           </CardHeader>
           <CardContent className="flex-1 flex flex-col items-center justify-center py-8">
             <div className={`w-32 h-32 rounded-full border-4 flex items-center justify-center mb-6 ${activeShift ? 'border-primary animate-pulse' : 'border-muted'}`}>
               <Clock className={`w-12 h-12 ${activeShift ? 'text-primary' : 'text-muted'}`} />
             </div>
             <div className="text-center mb-8">
-              <h3 className="text-xl font-bold">{activeShift ? 'You are Clocked In' : 'You are Clocked Out'}</h3>
-              <p className="text-muted-foreground">{activeShift ? 'Shift started at 09:12 AM' : 'Ready to start your day?'}</p>
+              <h3 className="text-xl font-bold">{activeShift ? 'Jste v práci' : 'Jste odhlášeni'}</h3>
+              <p className="text-muted-foreground">{activeShift ? 'Směna začala v 09:12' : 'Připraveni začít den?'}</p>
             </div>
             <Button 
               size="lg" 
@@ -71,9 +77,9 @@ export default function AttendancePage() {
               onClick={() => setActiveShift(!activeShift)}
             >
               {activeShift ? (
-                <> <Square className="w-5 h-5 mr-2 fill-white" /> Clock Out </>
+                <> <Square className="w-5 h-5 mr-2 fill-white" /> Ukončit směnu </>
               ) : (
-                <> <Play className="w-5 h-5 mr-2 fill-white" /> Clock In Now </>
+                <> <Play className="w-5 h-5 mr-2 fill-white" /> Začít směnu nyní </>
               )}
             </Button>
           </CardContent>
@@ -82,22 +88,22 @@ export default function AttendancePage() {
         <Card className="lg:col-span-2 bg-surface border-border">
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
-              <CardTitle>Recent History</CardTitle>
-              <CardDescription>Your logs for the last 7 days</CardDescription>
+              <CardTitle>Nedávná historie</CardTitle>
+              <CardDescription>Vaše záznamy za posledních 7 dní</CardDescription>
             </div>
             <Button variant="outline" size="sm" className="gap-2">
-              <CalendarIcon className="w-4 h-4" /> Custom Range
+              <CalendarIcon className="w-4 h-4" /> Vlastní rozsah
             </Button>
           </CardHeader>
           <CardContent>
             <Table>
               <TableHeader>
                 <TableRow className="border-border">
-                  <TableHead>Date</TableHead>
-                  <TableHead>Check In</TableHead>
-                  <TableHead>Check Out</TableHead>
-                  <TableHead>Total Hours</TableHead>
-                  <TableHead>Status</TableHead>
+                  <TableHead>Datum</TableHead>
+                  <TableHead>Příchod</TableHead>
+                  <TableHead>Odchod</TableHead>
+                  <TableHead>Celkem hodin</TableHead>
+                  <TableHead>Stav</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -108,7 +114,7 @@ export default function AttendancePage() {
                     <TableCell>{row.out}</TableCell>
                     <TableCell>{row.total}</TableCell>
                     <TableCell>
-                      <Badge variant={row.status === 'Overtime' ? 'default' : row.status === 'Absent' ? 'destructive' : 'secondary'}>
+                      <Badge variant={row.status === 'Přesčas' ? 'default' : row.status === 'Nepřítomen' ? 'destructive' : 'secondary'}>
                         {row.status}
                       </Badge>
                     </TableCell>
@@ -123,16 +129,16 @@ export default function AttendancePage() {
       {isAdmin && (
         <Card className="bg-surface border-border">
           <CardHeader>
-            <CardTitle>Team Attendance Overview</CardTitle>
-            <CardDescription>Real-time view of your team members currently on shift</CardDescription>
+            <CardTitle>Přehled docházky týmu</CardTitle>
+            <CardDescription>Pohled v reálném čase na členy týmu aktuálně na směně</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {[
-                { name: 'Alex Thompson', role: 'Lead Dev', status: 'active' },
-                { name: 'Sarah Miller', role: 'Designer', status: 'active' },
-                { name: 'John Doe', role: 'Manager', status: 'offline' },
-                { name: 'Emily Chen', role: 'Accountant', status: 'active' },
+                { name: 'Alex Thompson', role: 'Vedoucí vývoje', status: 'active' },
+                { name: 'Sára Millerová', role: 'Designérka', status: 'active' },
+                { name: 'Jan Novák', role: 'Manažer', status: 'offline' },
+                { name: 'Emílie Chenová', role: 'Účetní', status: 'active' },
               ].map((emp, i) => (
                 <div key={i} className="p-4 border border-border rounded-lg bg-background/40 flex items-center gap-4">
                   <div className={`w-3 h-3 rounded-full ${emp.status === 'active' ? 'bg-emerald-500 shadow-lg shadow-emerald-500/20' : 'bg-muted'}`} />

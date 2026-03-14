@@ -26,12 +26,26 @@ export const TopHeader = () => {
   const userRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
   const { data: profile } = useDoc(userRef);
 
+  const getRoleLabel = (role?: string) => {
+    if (!role) return 'Uživatel';
+    const roles: Record<string, string> = {
+      'super_admin': 'Super Administrátor',
+      'billing_admin': 'Správce Fakturace',
+      'owner': 'Vlastník',
+      'admin': 'Administrátor',
+      'manager': 'Manažer',
+      'accountant': 'Účetní',
+      'employee': 'Zaměstnanec'
+    };
+    return roles[role] || role;
+  };
+
   return (
     <header className="h-16 border-b bg-background/50 backdrop-blur-sm sticky top-0 z-40 flex items-center justify-between px-8">
       <div className="relative w-96 max-w-full">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <Input 
-          placeholder="Search everything..." 
+          placeholder="Hledat..." 
           className="pl-10 bg-surface/50 border-border focus-visible:ring-primary h-9"
         />
       </div>
@@ -48,7 +62,7 @@ export const TopHeader = () => {
               <div className="text-right hidden sm:block">
                 <p className="text-sm font-medium leading-none">{profile?.displayName || user?.email}</p>
                 <p className="text-xs text-muted-foreground mt-1 capitalize">
-                  {profile?.globalRoles?.[0]?.replace('_', ' ') || 'User'}
+                  {getRoleLabel(profile?.globalRoles?.[0])}
                 </p>
               </div>
               <Avatar className="h-9 w-9 border-2 border-primary/20">
@@ -60,13 +74,13 @@ export const TopHeader = () => {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56 bg-surface">
-            <DropdownMenuLabel>My Account</DropdownMenuLabel>
+            <DropdownMenuLabel>Můj účet</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem className="cursor-pointer">
-              <User className="w-4 h-4 mr-2" /> Profile
+              <User className="w-4 h-4 mr-2" /> Profil
             </DropdownMenuItem>
             <DropdownMenuItem className="cursor-pointer text-destructive" onClick={() => signOut(auth)}>
-              <LogOut className="w-4 h-4 mr-2" /> Logout
+              <LogOut className="w-4 h-4 mr-2" /> Odhlásit se
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

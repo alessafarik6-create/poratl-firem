@@ -2,18 +2,18 @@
 "use client";
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Briefcase, Plus, Search, Filter, Clock, Loader2 } from 'lucide-react';
+import { Plus, Loader2 } from 'lucide-react';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection } from 'firebase/firestore';
 import { Progress } from '@/components/ui/progress';
 
 export default function JobsPage() {
   const firestore = useFirestore();
-  const companyId = 'nebula-tech'; // Assume current tenant
+  const companyId = 'nebula-tech'; 
 
   const jobsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -26,18 +26,18 @@ export default function JobsPage() {
     <div className="space-y-8">
       <div className="flex justify-between items-end">
         <div>
-          <h1 className="text-3xl font-bold">Job Management</h1>
-          <p className="text-muted-foreground mt-2">Track active projects, deadlines, and team assignments.</p>
+          <h1 className="text-3xl font-bold">Správa zakázek</h1>
+          <p className="text-muted-foreground mt-2">Sledujte aktivní projekty, termíny a přiřazení týmu.</p>
         </div>
         <Button className="gap-2">
-          <Plus className="w-4 h-4" /> Create New Job
+          <Plus className="w-4 h-4" /> Vytvořit novou zakázku
         </Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="bg-surface border-border">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Active</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Celkem aktivních</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{jobs?.filter(j => j.status !== 'completed').length || 0}</div>
@@ -45,7 +45,7 @@ export default function JobsPage() {
         </Card>
         <Card className="bg-surface border-border">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Completed This Week</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Dokončeno tento týden</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{jobs?.filter(j => j.status === 'completed').length || 0}</div>
@@ -53,17 +53,17 @@ export default function JobsPage() {
         </Card>
         <Card className="bg-surface border-border">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Avg. Completion Time</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Prům. doba dokončení</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">4.2 days</div>
+            <div className="text-2xl font-bold">4.2 dne</div>
           </CardContent>
         </Card>
       </div>
 
       <Card className="bg-surface border-border">
         <CardHeader>
-          <CardTitle>All Jobs</CardTitle>
+          <CardTitle>Všechny zakázky</CardTitle>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -74,11 +74,11 @@ export default function JobsPage() {
             <Table>
               <TableHeader>
                 <TableRow className="border-border">
-                  <TableHead>Job Name</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Progress</TableHead>
-                  <TableHead>Start Date</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead>Název zakázky</TableHead>
+                  <TableHead>Stav</TableHead>
+                  <TableHead>Pokrok</TableHead>
+                  <TableHead>Datum zahájení</TableHead>
+                  <TableHead className="text-right">Akce</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -87,7 +87,7 @@ export default function JobsPage() {
                     <TableCell className="font-medium">{job.name}</TableCell>
                     <TableCell>
                       <Badge variant={job.status === 'completed' ? 'default' : 'secondary'} className="capitalize">
-                        {job.status}
+                        {job.status === 'completed' ? 'Dokončeno' : 'Probíhá'}
                       </Badge>
                     </TableCell>
                     <TableCell className="w-48">
@@ -98,7 +98,7 @@ export default function JobsPage() {
                     </TableCell>
                     <TableCell className="text-sm">{job.startDate || 'N/A'}</TableCell>
                     <TableCell className="text-right">
-                      <Button variant="ghost" size="sm">Manage</Button>
+                      <Button variant="ghost" size="sm">Spravovat</Button>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -106,7 +106,7 @@ export default function JobsPage() {
             </Table>
           ) : (
             <div className="text-center py-20 text-muted-foreground">
-              No jobs found. Create your first project to get started.
+              Žádné zakázky nebyly nalezeny. Vytvořte svůj první projekt a začněte.
             </div>
           )}
         </CardContent>

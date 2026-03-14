@@ -1,3 +1,4 @@
+
 "use client";
 
 import React from 'react';
@@ -9,22 +10,22 @@ import { TrendingUp, TrendingDown, DollarSign, Receipt, Download } from 'lucide-
 
 export default function FinancePage() {
   const stats = [
-    { title: 'Total Revenue', value: '$24,500.00', icon: DollarSign, trend: '+12.5%', up: true },
-    { title: 'Total Expenses', value: '$8,200.00', icon: TrendingDown, trend: '-2.1%', up: false },
-    { title: 'Net Profit', value: '$16,300.00', icon: TrendingUp, trend: '+24.3%', up: true },
-    { title: 'Unpaid Invoices', value: '$3,150.00', icon: Receipt, trend: '4 pending', up: false },
+    { title: 'Celkové příjmy', value: '24 500,00 Kč', icon: DollarSign, trend: '+12.5%', up: true },
+    { title: 'Celkové výdaje', value: '8 200,00 Kč', icon: TrendingDown, trend: '-2.1%', up: false },
+    { title: 'Čistý zisk', value: '16 300,00 Kč', icon: TrendingUp, trend: '+24.3%', up: true },
+    { title: 'Neuhrazené faktury', value: '3 150,00 Kč', icon: Receipt, trend: '4 čekající', up: false },
   ];
 
   return (
     <div className="space-y-8">
       <div className="flex justify-between items-end">
         <div>
-          <h1 className="text-3xl font-bold">Financial Center</h1>
-          <p className="text-muted-foreground mt-2">Track revenue, expenses, and overall business health.</p>
+          <h1 className="text-3xl font-bold">Finanční centrum</h1>
+          <p className="text-muted-foreground mt-2">Sledujte příjmy, výdaje a celkové zdraví podniku.</p>
         </div>
         <div className="flex gap-3">
           <Button className="gap-2">
-            <Download className="w-4 h-4" /> Download Report
+            <Download className="w-4 h-4" /> Stáhnout report
           </Button>
         </div>
       </div>
@@ -39,7 +40,7 @@ export default function FinancePage() {
             <CardContent>
               <div className="text-2xl font-bold">{stat.value}</div>
               <p className={`text-xs mt-1 ${stat.up ? 'text-emerald-500' : 'text-rose-500'}`}>
-                {stat.trend} {stat.up ? 'from last period' : ''}
+                {stat.trend} {stat.up ? 'oproti min. období' : ''}
               </p>
             </CardContent>
           </Card>
@@ -48,25 +49,25 @@ export default function FinancePage() {
 
       <Card className="bg-surface border-border">
         <CardHeader>
-          <CardTitle>Recent Transactions</CardTitle>
+          <CardTitle>Nedávné transakce</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow className="border-border">
                 <TableHead>Reference</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead>Status</TableHead>
+                <TableHead>Kategorie</TableHead>
+                <TableHead>Datum</TableHead>
+                <TableHead>Částka</TableHead>
+                <TableHead>Stav</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {[
-                { ref: 'INV-2024-001', cat: 'Sales', date: 'May 20, 2024', amt: '+$2,400', status: 'paid' },
-                { ref: 'EXP-9923', cat: 'Cloud Hosting', date: 'May 18, 2024', amt: '-$450', status: 'completed' },
-                { ref: 'INV-2024-002', cat: 'Sales', date: 'May 15, 2024', amt: '+$1,200', status: 'pending' },
-                { ref: 'EXP-9924', cat: 'Rent', date: 'May 01, 2024', amt: '-$2,500', status: 'completed' },
+                { ref: 'INV-2024-001', cat: 'Prodej', date: '20.05.2024', amt: '+2 400 Kč', status: 'zaplaceno' },
+                { ref: 'EXP-9923', cat: 'Cloud Hosting', date: '18.05.2024', amt: '-450 Kč', status: 'dokončeno' },
+                { ref: 'INV-2024-002', cat: 'Prodej', date: '15.05.2024', amt: '+1 200 Kč', status: 'čekající' },
+                { ref: 'EXP-9924', cat: 'Nájem', date: '01.05.2024', amt: '-2 500 Kč', status: 'dokončeno' },
               ].map((tx, i) => (
                 <TableRow key={i} className="border-border">
                   <TableCell className="font-medium">{tx.ref}</TableCell>
@@ -74,8 +75,8 @@ export default function FinancePage() {
                   <TableCell>{tx.date}</TableCell>
                   <TableCell className={tx.amt.startsWith('+') ? 'text-emerald-500' : 'text-rose-500'}>{tx.amt}</TableCell>
                   <TableCell>
-                    <Badge variant={tx.status === 'paid' || tx.status === 'completed' ? 'default' : 'outline'} className="capitalize">
-                      {tx.status}
+                    <Badge variant={tx.status === 'zaplaceno' || tx.status === 'dokončeno' ? 'default' : 'outline'} className="capitalize">
+                      {tx.status === 'zaplaceno' ? 'Zaplaceno' : tx.status === 'dokončeno' ? 'Dokončeno' : 'Čekající'}
                     </Badge>
                   </TableCell>
                 </TableRow>

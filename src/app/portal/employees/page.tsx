@@ -1,3 +1,4 @@
+
 "use client";
 
 import React from 'react';
@@ -12,7 +13,7 @@ import { collection } from 'firebase/firestore';
 
 export default function EmployeesPage() {
   const firestore = useFirestore();
-  const companyId = 'nebula-tech'; // Assume current tenant
+  const companyId = 'nebula-tech'; 
 
   const employeesQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -25,12 +26,12 @@ export default function EmployeesPage() {
     <div className="space-y-8">
       <div className="flex justify-between items-end">
         <div>
-          <h1 className="text-3xl font-bold">Employee Directory</h1>
-          <p className="text-muted-foreground mt-2">Manage your workforce, roles, and performance insights for {companyId}.</p>
+          <h1 className="text-3xl font-bold">Adresář zaměstnanců</h1>
+          <p className="text-muted-foreground mt-2">Spravujte své pracovníky, role a přehledy výkonu pro {companyId}.</p>
         </div>
         <div className="flex gap-3">
           <Button className="gap-2">
-            <Plus className="w-4 h-4" /> Add Employee
+            <Plus className="w-4 h-4" /> Přidat zaměstnance
           </Button>
         </div>
       </div>
@@ -39,11 +40,11 @@ export default function EmployeesPage() {
         <div className="p-4 border-b bg-background/30 flex flex-col sm:flex-row gap-4 justify-between">
           <div className="relative w-80">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input placeholder="Search employees..." className="pl-10 bg-background border-border" />
+            <Input placeholder="Hledat zaměstnance..." className="pl-10 bg-background border-border" />
           </div>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" className="gap-2">
-              <Filter className="w-4 h-4" /> Filter
+              <Filter className="w-4 h-4" /> Filtr
             </Button>
             <Button variant="outline" size="sm" className="gap-2">
               <Download className="w-4 h-4" /> Export
@@ -59,11 +60,11 @@ export default function EmployeesPage() {
             <Table>
               <TableHeader>
                 <TableRow className="border-border hover:bg-transparent">
-                  <TableHead className="pl-6">Name</TableHead>
+                  <TableHead className="pl-6">Jméno</TableHead>
                   <TableHead>Role</TableHead>
-                  <TableHead>Job Title</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="pr-6 text-right">Actions</TableHead>
+                  <TableHead>Pozice</TableHead>
+                  <TableHead>Stav</TableHead>
+                  <TableHead className="pr-6 text-right">Akce</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -75,15 +76,15 @@ export default function EmployeesPage() {
                         <span className="text-xs text-muted-foreground font-normal">{emp.email}</span>
                       </div>
                     </TableCell>
-                    <TableCell className="capitalize">{emp.role}</TableCell>
+                    <TableCell className="capitalize">{emp.role === 'owner' ? 'Vlastník' : emp.role === 'admin' ? 'Administrátor' : emp.role === 'manager' ? 'Manažer' : emp.role === 'accountant' ? 'Účetní' : 'Zaměstnanec'}</TableCell>
                     <TableCell>{emp.jobTitle}</TableCell>
                     <TableCell>
                       <Badge variant={emp.isActive ? 'default' : 'secondary'} className="capitalize">
-                        {emp.isActive ? 'Active' : 'Inactive'}
+                        {emp.isActive ? 'Aktivní' : 'Neaktivní'}
                       </Badge>
                     </TableCell>
                     <TableCell className="pr-6 text-right">
-                      <Button variant="ghost" size="sm">Manage</Button>
+                      <Button variant="ghost" size="sm">Spravovat</Button>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -91,8 +92,8 @@ export default function EmployeesPage() {
             </Table>
           ) : (
             <div className="text-center py-20">
-              <p className="text-muted-foreground">No employees found in this organization.</p>
-              <Button variant="link" className="text-primary mt-2">Add your first employee</Button>
+              <p className="text-muted-foreground">V této organizaci nebyli nalezeni žádní zaměstnanci.</p>
+              <Button variant="link" className="text-primary mt-2">Přidat prvního zaměstnance</Button>
             </div>
           )}
         </CardContent>

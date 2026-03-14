@@ -13,16 +13,16 @@ export default function ChatPage() {
   const [message, setMessage] = useState('');
   
   const contacts = [
-    { id: '1', name: 'General Channel', type: 'channel', lastMsg: 'Alex: We updated the project...', active: true },
-    { id: '2', name: 'Management', type: 'channel', lastMsg: 'Sarah: Please review the docs', active: false },
-    { id: '3', name: 'Sarah Miller', type: 'direct', lastMsg: 'Can we talk later?', active: false, avatar: 'https://picsum.photos/seed/sarah/100/100' },
-    { id: '4', name: 'Mike Thompson', type: 'direct', lastMsg: 'The report is ready.', active: false, avatar: 'https://picsum.photos/seed/mike/100/100' },
+    { id: '1', name: 'Obecný kanál', type: 'channel', lastMsg: 'Alex: Aktualizovali jsme projekt...', active: true },
+    { id: '2', name: 'Management', type: 'channel', lastMsg: 'Sára: Prosím projděte si ty dokumenty', active: false },
+    { id: '3', name: 'Sára Millerová', type: 'direct', lastMsg: 'Můžeme si promluvit později?', active: false, avatar: 'https://picsum.photos/seed/sarah/100/100' },
+    { id: '4', name: 'Michal Thompson', type: 'direct', lastMsg: 'Report je připraven.', active: false, avatar: 'https://picsum.photos/seed/mike/100/100' },
   ];
 
   const messages = [
-    { id: '1', user: 'Alex Thompson', content: 'Hey team, did everyone see the update for Job #12?', time: '09:45 AM', self: false },
-    { id: '2', user: 'You', content: 'Yes, looking good. I will start the implementation today.', time: '10:02 AM', self: true },
-    { id: '3', user: 'Sarah Miller', content: 'Awesome! Let me know if you need any assets.', time: '10:05 AM', self: false },
+    { id: '1', user: 'Alex Thompson', content: 'Ahoj týme, viděli všichni aktualizaci pro zakázku #12?', time: '09:45', self: false },
+    { id: '2', user: 'Vy', content: 'Ano, vypadá to dobře. Dnes začnu s implementací.', time: '10:02', self: true },
+    { id: '3', user: 'Sára Millerová', content: 'Skvělé! Dejte mi vědět, pokud budete něco potřebovat.', time: '10:05', self: false },
   ];
 
   return (
@@ -32,10 +32,10 @@ export default function ChatPage() {
         <div className="p-4 border-b">
           <div className="relative mb-4">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input placeholder="Search messages..." className="pl-10 bg-background border-border" />
+            <Input placeholder="Hledat zprávy..." className="pl-10 bg-background border-border" />
           </div>
           <Button variant="outline" className="w-full justify-between">
-            New Chat <Plus className="w-4 h-4" />
+            Nová zpráva <Plus className="w-4 h-4" />
           </Button>
         </div>
         <ScrollArea className="flex-1">
@@ -71,8 +71,8 @@ export default function ChatPage() {
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-md bg-muted flex items-center justify-center font-bold text-lg">#</div>
             <div>
-              <h3 className="font-bold">General Channel</h3>
-              <p className="text-xs text-muted-foreground">Team-wide discussions</p>
+              <h3 className="font-bold">Obecný kanál</h3>
+              <p className="text-xs text-muted-foreground">Týmová diskuse</p>
             </div>
           </div>
           <Button variant="ghost" size="icon"><MoreHorizontal className="w-5 h-5" /></Button>
@@ -89,7 +89,7 @@ export default function ChatPage() {
                 )}
                 <div className={`max-w-[70%] ${msg.self ? 'items-end' : ''} flex flex-col gap-1`}>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-xs font-bold">{msg.self ? 'You' : msg.user}</span>
+                    <span className="text-xs font-bold">{msg.self ? 'Vy' : msg.user}</span>
                     <span className="text-[10px] text-muted-foreground">{msg.time}</span>
                   </div>
                   <div className={`p-3 rounded-2xl text-sm ${msg.self ? 'bg-primary text-white rounded-tr-none' : 'bg-muted text-foreground rounded-tl-none'}`}>
@@ -106,7 +106,7 @@ export default function ChatPage() {
             <Button variant="ghost" size="icon" className="text-muted-foreground"><Smile className="w-5 h-5" /></Button>
             <Button variant="ghost" size="icon" className="text-muted-foreground"><Paperclip className="w-5 h-5" /></Button>
             <Input 
-              placeholder="Type your message..." 
+              placeholder="Napište zprávu..." 
               className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 h-10"
               value={message}
               onChange={(e) => setMessage(e.target.value)}

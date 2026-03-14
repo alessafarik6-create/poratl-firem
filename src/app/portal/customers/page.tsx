@@ -2,18 +2,17 @@
 "use client";
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Plus, Search, Filter, Download, UserPlus, Loader2 } from 'lucide-react';
+import { Search, Filter, Download, UserPlus, Loader2 } from 'lucide-react';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection } from 'firebase/firestore';
 
 export default function CustomersPage() {
   const firestore = useFirestore();
-  const companyId = 'nebula-tech'; // Assume current tenant
+  const companyId = 'nebula-tech'; 
 
   const customersQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -26,11 +25,11 @@ export default function CustomersPage() {
     <div className="space-y-8">
       <div className="flex justify-between items-end">
         <div>
-          <h1 className="text-3xl font-bold">Customer Directory</h1>
-          <p className="text-muted-foreground mt-2">Manage client relationships and contact information.</p>
+          <h1 className="text-3xl font-bold">Adresář zákazníků</h1>
+          <p className="text-muted-foreground mt-2">Spravujte vztahy s klienty a kontaktní informace.</p>
         </div>
         <Button className="gap-2">
-          <UserPlus className="w-4 h-4" /> New Customer
+          <UserPlus className="w-4 h-4" /> Nový zákazník
         </Button>
       </div>
 
@@ -38,11 +37,11 @@ export default function CustomersPage() {
         <div className="p-4 border-b bg-background/30 flex flex-col sm:flex-row gap-4 justify-between">
           <div className="relative w-80">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input placeholder="Search customers..." className="pl-10 bg-background border-border" />
+            <Input placeholder="Hledat zákazníky..." className="pl-10 bg-background border-border" />
           </div>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" className="gap-2">
-              <Filter className="w-4 h-4" /> Filter
+              <Filter className="w-4 h-4" /> Filtr
             </Button>
             <Button variant="outline" size="sm" className="gap-2">
               <Download className="w-4 h-4" /> Export
@@ -58,10 +57,10 @@ export default function CustomersPage() {
             <Table>
               <TableHeader>
                 <TableRow className="border-border hover:bg-transparent">
-                  <TableHead className="pl-6">Customer</TableHead>
-                  <TableHead>Contact Info</TableHead>
-                  <TableHead>Company</TableHead>
-                  <TableHead className="pr-6 text-right">Actions</TableHead>
+                  <TableHead className="pl-6">Zákazník</TableHead>
+                  <TableHead>Kontaktní údaje</TableHead>
+                  <TableHead>Firma</TableHead>
+                  <TableHead className="pr-6 text-right">Akce</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -73,12 +72,12 @@ export default function CustomersPage() {
                     <TableCell>
                       <div className="flex flex-col text-sm">
                         <span>{cust.email}</span>
-                        <span className="text-muted-foreground text-xs">{cust.phone || 'No phone'}</span>
+                        <span className="text-muted-foreground text-xs">{cust.phone || 'Bez telefonu'}</span>
                       </div>
                     </TableCell>
                     <TableCell>{cust.companyName || '-'}</TableCell>
                     <TableCell className="pr-6 text-right">
-                      <Button variant="ghost" size="sm">Details</Button>
+                      <Button variant="ghost" size="sm">Detaily</Button>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -86,8 +85,8 @@ export default function CustomersPage() {
             </Table>
           ) : (
             <div className="text-center py-20">
-              <p className="text-muted-foreground">No customers found.</p>
-              <Button variant="link" className="text-primary mt-2">Add your first customer</Button>
+              <p className="text-muted-foreground">Žádní zákazníci nebyli nalezeni.</p>
+              <Button variant="link" className="text-primary mt-2">Přidat prvního zákazníka</Button>
             </div>
           )}
         </CardContent>
