@@ -1,45 +1,44 @@
+
 "use client";
 
 import React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Plus, Search, Filter, Download, Loader2 } from 'lucide-react';
+import { Plus, Search, Filter, Download, UserPlus, Loader2 } from 'lucide-react';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection } from 'firebase/firestore';
 
-export default function EmployeesPage() {
+export default function CustomersPage() {
   const firestore = useFirestore();
   const companyId = 'nebula-tech'; // Assume current tenant
 
-  const employeesQuery = useMemoFirebase(() => {
+  const customersQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    return collection(firestore, 'companies', companyId, 'employees');
+    return collection(firestore, 'companies', companyId, 'customers');
   }, [firestore, companyId]);
 
-  const { data: employees, isLoading } = useCollection(employeesQuery);
+  const { data: customers, isLoading } = useCollection(customersQuery);
 
   return (
     <div className="space-y-8">
       <div className="flex justify-between items-end">
         <div>
-          <h1 className="text-3xl font-bold">Employee Directory</h1>
-          <p className="text-muted-foreground mt-2">Manage your workforce, roles, and performance insights for {companyId}.</p>
+          <h1 className="text-3xl font-bold">Customer Directory</h1>
+          <p className="text-muted-foreground mt-2">Manage client relationships and contact information.</p>
         </div>
-        <div className="flex gap-3">
-          <Button className="gap-2">
-            <Plus className="w-4 h-4" /> Add Employee
-          </Button>
-        </div>
+        <Button className="gap-2">
+          <UserPlus className="w-4 h-4" /> New Customer
+        </Button>
       </div>
 
       <Card className="bg-surface border-border overflow-hidden">
         <div className="p-4 border-b bg-background/30 flex flex-col sm:flex-row gap-4 justify-between">
           <div className="relative w-80">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input placeholder="Search employees..." className="pl-10 bg-background border-border" />
+            <Input placeholder="Search customers..." className="pl-10 bg-background border-border" />
           </div>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" className="gap-2">
@@ -55,35 +54,31 @@ export default function EmployeesPage() {
             <div className="flex items-center justify-center p-12">
               <Loader2 className="w-8 h-8 animate-spin text-primary" />
             </div>
-          ) : employees && employees.length > 0 ? (
+          ) : customers && customers.length > 0 ? (
             <Table>
               <TableHeader>
                 <TableRow className="border-border hover:bg-transparent">
-                  <TableHead className="pl-6">Name</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Job Title</TableHead>
-                  <TableHead>Status</TableHead>
+                  <TableHead className="pl-6">Customer</TableHead>
+                  <TableHead>Contact Info</TableHead>
+                  <TableHead>Company</TableHead>
                   <TableHead className="pr-6 text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {employees.map((emp) => (
-                  <TableRow key={emp.id} className="border-border hover:bg-muted/30">
+                {customers.map((cust) => (
+                  <TableRow key={cust.id} className="border-border hover:bg-muted/30">
                     <TableCell className="pl-6 font-medium">
-                      <div className="flex flex-col">
-                        <span>{emp.firstName} {emp.lastName}</span>
-                        <span className="text-xs text-muted-foreground font-normal">{emp.email}</span>
+                      {cust.firstName} {cust.lastName}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-col text-sm">
+                        <span>{cust.email}</span>
+                        <span className="text-muted-foreground text-xs">{cust.phone || 'No phone'}</span>
                       </div>
                     </TableCell>
-                    <TableCell className="capitalize">{emp.role}</TableCell>
-                    <TableCell>{emp.jobTitle}</TableCell>
-                    <TableCell>
-                      <Badge variant={emp.isActive ? 'default' : 'secondary'} className="capitalize">
-                        {emp.isActive ? 'Active' : 'Inactive'}
-                      </Badge>
-                    </TableCell>
+                    <TableCell>{cust.companyName || '-'}</TableCell>
                     <TableCell className="pr-6 text-right">
-                      <Button variant="ghost" size="sm">Manage</Button>
+                      <Button variant="ghost" size="sm">Details</Button>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -91,8 +86,8 @@ export default function EmployeesPage() {
             </Table>
           ) : (
             <div className="text-center py-20">
-              <p className="text-muted-foreground">No employees found in this organization.</p>
-              <Button variant="link" className="text-primary mt-2">Add your first employee</Button>
+              <p className="text-muted-foreground">No customers found.</p>
+              <Button variant="link" className="text-primary mt-2">Add your first customer</Button>
             </div>
           )}
         </CardContent>

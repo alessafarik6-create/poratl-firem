@@ -2,7 +2,7 @@
 "use client";
 
 import React from 'react';
-import { useAuth } from '@/lib/mock-auth';
+import { useAuth, useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { 
   DropdownMenu, 
@@ -15,9 +15,16 @@ import {
 import { Bell, Search, LogOut, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { signOut } from 'firebase/auth';
+import { doc } from 'firebase/firestore';
 
 export const TopHeader = () => {
-  const { user, logout } = useAuth();
+  const auth = useAuth();
+  const { user } = useUser();
+  const firestore = useFirestore();
+
+  const userRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
+  const { data: profile } = useDoc(userRef);
 
   return (
     <header className="h-16 border-b bg-background/50 backdrop-blur-sm sticky top-0 z-40 flex items-center justify-between px-8">
@@ -39,13 +46,15 @@ export const TopHeader = () => {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="flex items-center gap-3 px-2 hover:bg-surface transition-colors">
               <div className="text-right hidden sm:block">
-                <p className="text-sm font-medium leading-none">{user?.name}</p>
-                <p className="text-xs text-muted-foreground mt-1 capitalize">{user?.role.replace('_', ' ')}</p>
+                <p className="text-sm font-medium leading-none">{profile?.displayName || user?.email}</p>
+                <p className="text-xs text-muted-foreground mt-1 capitalize">
+                  {profile?.globalRoles?.[0]?.replace('_', ' ') || 'User'}
+                </p>
               </div>
               <Avatar className="h-9 w-9 border-2 border-primary/20">
-                <AvatarImage src={user?.avatar} />
+                <AvatarImage src={profile?.photoUrl} />
                 <AvatarFallback className="bg-primary text-white font-bold">
-                  {user?.name?.[0].toUpperCase()}
+                  {(profile?.displayName?.[0] || user?.email?.[0] || 'U').toUpperCase()}
                 </AvatarFallback>
               </Avatar>
             </Button>
@@ -56,8 +65,8 @@ export const TopHeader = () => {
             <DropdownMenuItem className="cursor-pointer">
               <User className="w-4 h-4 mr-2" /> Profile
             </DropdownMenuItem>
-            <DropdownMenuItem className="cursor-pointer" onClick={() => logout()}>
-              <LogOut className="w-4 h-4 mr-2 text-destructive" /> Logout
+            <DropdownMenuItem className="cursor-pointer text-destructive" onClick={() => signOut(auth)}>
+              <LogOut className="w-4 h-4 mr-2" /> Logout
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

@@ -3,23 +3,28 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/lib/mock-auth';
+import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
 
 export default function Home() {
-  const { user, loading } = useAuth();
+  const { user, isUserLoading } = useUser();
+  const firestore = useFirestore();
   const router = useRouter();
 
+  const userRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
+  const { data: userProfile, isLoading: isProfileLoading } = useDoc(userRef);
+
   useEffect(() => {
-    if (!loading) {
+    if (!isUserLoading && !isProfileLoading) {
       if (!user) {
         router.push('/login');
-      } else if (user.role === 'super_admin') {
+      } else if (userProfile?.globalRoles?.includes('super_admin')) {
         router.push('/admin/dashboard');
       } else {
         router.push('/portal/dashboard');
       }
     }
-  }, [user, loading, router]);
+  }, [user, isUserLoading, userProfile, isProfileLoading, router]);
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center">

@@ -3,21 +3,34 @@
 
 import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/lib/mock-auth';
+import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { BizForgeSidebar } from '@/components/layout/bizforge-sidebar';
 import { TopHeader } from '@/components/layout/top-header';
+import { doc } from 'firebase/firestore';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
+  const { user, isUserLoading } = useUser();
+  const firestore = useFirestore();
   const router = useRouter();
 
-  useEffect(() => {
-    if (!loading && (!user || user.role !== 'super_admin')) {
-      router.push('/login');
-    }
-  }, [user, loading, router]);
+  const userRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
+  const { data: profile, isLoading: isProfileLoading } = useDoc(userRef);
 
-  if (loading || !user) return null;
+  useEffect(() => {
+    if (!isUserLoading && !isProfileLoading) {
+      if (!user || !profile?.globalRoles?.includes('super_admin')) {
+        router.push('/login');
+      }
+    }
+  }, [user, isUserLoading, profile, isProfileLoading, router]);
+
+  if (isUserLoading || isProfileLoading || !user) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen bg-background text-foreground">

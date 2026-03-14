@@ -2,23 +2,49 @@
 "use client";
 
 import React, { useState } from 'react';
-import { useAuth } from '@/lib/mock-auth';
+import { useAuth } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Building2, ShieldAlert } from 'lucide-react';
+import { Building2, ShieldAlert, UserCircle, Loader2 } from 'lucide-react';
 import Image from 'next/image';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { useToast } from '@/hooks/use-toast';
 
 export default function LoginPage() {
-  const { login } = useAuth();
+  const auth = useAuth();
   const router = useRouter();
+  const { toast } = useToast();
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = (role: any) => {
-    login(email || 'demo@bizforge.com', role);
-    router.push(role === 'super_admin' ? '/admin/dashboard' : '/portal/dashboard');
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !password) {
+      toast({
+        variant: "destructive",
+        title: "Missing credentials",
+        description: "Please enter both email and password."
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      // Navigation will be handled by the root layout's auth listener
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Authentication Failed",
+        description: error.message || "Invalid email or password."
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -29,6 +55,7 @@ export default function LoginPage() {
           alt="Login background"
           fill
           className="object-cover opacity-50"
+          data-ai-hint="dark abstract orange"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black to-transparent" />
         <div className="absolute bottom-12 left-12 right-12">
@@ -48,44 +75,48 @@ export default function LoginPage() {
               <CardDescription>Enter your credentials to access your portal</CardDescription>
             </div>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email address</Label>
-              <Input 
-                id="email" 
-                type="email" 
-                placeholder="name@company.com" 
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="bg-background border-border"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input id="password" type="password" className="bg-background border-border" />
-            </div>
-            <Button className="w-full h-11 text-lg font-semibold" onClick={() => handleLogin('company_owner')}>
-              Sign In
-            </Button>
-          </CardContent>
+          <form onSubmit={handleLogin}>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email address</Label>
+                <Input 
+                  id="email" 
+                  type="email" 
+                  placeholder="name@company.com" 
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="bg-background border-border"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input 
+                  id="password" 
+                  type="password" 
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="bg-background border-border" 
+                  required
+                />
+              </div>
+              <Button type="submit" className="w-full h-11 text-lg font-semibold" disabled={loading}>
+                {loading ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : null}
+                Sign In
+              </Button>
+            </CardContent>
+          </form>
           <CardFooter className="flex flex-col gap-4">
             <div className="relative w-full">
               <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
-              <div className="relative flex justify-center text-xs uppercase"><span className="bg-surface px-2 text-muted-foreground">Demo Accounts</span></div>
+              <div className="relative flex justify-center text-xs uppercase"><span className="bg-surface px-2 text-muted-foreground">Test Access</span></div>
             </div>
-            <div className="grid grid-cols-2 gap-2 w-full">
-              <Button variant="outline" size="sm" onClick={() => handleLogin('super_admin')}>
-                <ShieldAlert className="w-4 h-4 mr-2" /> Admin Login
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => handleLogin('employee')}>
-                <UserCircle className="w-4 h-4 mr-2" /> Employee Login
-              </Button>
-            </div>
+            <p className="text-xs text-center text-muted-foreground px-6">
+              Use your registered organizational email and password provided by your administrator.
+            </p>
           </CardFooter>
         </Card>
       </div>
     </div>
   );
 }
-
-import { UserCircle } from 'lucide-react';

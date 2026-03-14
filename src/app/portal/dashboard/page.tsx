@@ -6,25 +6,41 @@ import {
   Briefcase, 
   Clock, 
   Wallet,
-  Calendar
+  Calendar,
+  AlertCircle
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection } from '@/firebase';
+import { doc, collection, query, where } from 'firebase/firestore';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export default function CompanyDashboard() {
-  const activeJobs = [
-    { id: '1', title: 'Website Overhaul', client: 'Acme Corp', progress: 75, status: 'on_track' },
-    { id: '2', title: 'Marketing Campaign', client: 'Global X', progress: 40, status: 'delayed' },
-    { id: '3', title: 'Server Migration', client: 'Internal', progress: 95, status: 'on_track' },
-  ];
+  const { user } = useUser();
+  const firestore = useFirestore();
+
+  // In a real multi-tenant app, we'd get the current company from the route or user context
+  // For this prototype, we'll assume the user is part of 'nebula-tech' or find their first company_role
+  // Since we don't have the current company ID in the URL, we'll use a placeholder or look it up
+  const companyId = 'nebula-tech'; 
+
+  const userRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
+  const { data: profile } = useDoc(userRef);
+
+  const jobsQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return collection(firestore, 'companies', companyId, 'jobs');
+  }, [firestore, companyId]);
+
+  const { data: jobs, isLoading: isJobsLoading } = useCollection(jobsQuery);
 
   return (
     <div className="space-y-8">
       <div className="flex justify-between items-end">
         <div>
-          <h1 className="text-3xl font-bold">Good morning, Nebula Tech</h1>
+          <h1 className="text-3xl font-bold">Good morning, {profile?.displayName || user?.email?.split('@')[0]}</h1>
           <p className="text-muted-foreground mt-2">Here's your organization's performance for today.</p>
         </div>
         <div className="flex gap-3">
@@ -54,8 +70,8 @@ export default function CompanyDashboard() {
             <Briefcase className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">12</div>
-            <p className="text-xs text-muted-foreground mt-1">4 nearing deadline</p>
+            <div className="text-2xl font-bold">{jobs?.length || 0}</div>
+            <p className="text-xs text-muted-foreground mt-1">Managed in {companyId}</p>
           </CardContent>
         </Card>
         <Card className="bg-surface border-border">
@@ -85,26 +101,33 @@ export default function CompanyDashboard() {
           <Card className="bg-surface border-border">
             <CardHeader>
               <CardTitle>Ongoing Projects</CardTitle>
-              <CardDescription>Performance of your most important active jobs</CardDescription>
+              <CardDescription>Performance of active jobs in {companyId}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              {activeJobs.map((job) => (
-                <div key={job.id} className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <h4 className="font-semibold">{job.title}</h4>
-                      <p className="text-xs text-muted-foreground">{job.client}</p>
-                    </div>
-                    <Badge variant={job.status === 'on_track' ? 'default' : 'destructive'} className="capitalize">
-                      {job.status.replace('_', ' ')}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <Progress value={job.progress} className="flex-1" />
-                    <span className="text-sm font-medium">{job.progress}%</span>
-                  </div>
+              {isJobsLoading ? (
+                <div className="flex justify-center p-8">
+                  <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
                 </div>
-              ))}
+              ) : jobs && jobs.length > 0 ? (
+                jobs.map((job) => (
+                  <div key={job.id} className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <h4 className="font-semibold">{job.name}</h4>
+                        <p className="text-xs text-muted-foreground">{job.status}</p>
+                      </div>
+                      <Badge variant={job.status === 'completed' ? 'default' : 'secondary'} className="capitalize">
+                        {job.status}
+                      </Badge>
+                    </div>
+                    <Progress value={job.status === 'completed' ? 100 : 45} className="flex-1" />
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-12 text-muted-foreground">
+                  No active jobs found for this organization.
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>

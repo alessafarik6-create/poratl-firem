@@ -19,17 +19,24 @@ import {
   UserCircle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useAuth } from '@/lib/mock-auth';
+import { useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
 
 export const BizForgeSidebar = () => {
   const pathname = usePathname();
-  const { user } = useAuth();
+  const { user } = useUser();
+  const firestore = useFirestore();
 
+  // Fetch user profile to check global roles
+  const userRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
+  const { data: userProfile } = useDoc(userRef);
+
+  const isSuperAdmin = userProfile?.globalRoles?.includes('super_admin');
   const isAdminArea = pathname.startsWith('/admin');
   
   const adminLinks = [
     { label: 'Overview', href: '/admin/dashboard', icon: LayoutDashboard },
-    { label: 'Companies', href: '/admin/companies', icon: Building2 },
+    { label: 'Organizations', href: '/admin/companies', icon: Building2 },
     { label: 'Licenses', href: '/admin/licenses', icon: ShieldCheck },
     { label: 'Billing', href: '/admin/billing', icon: CreditCard },
   ];
@@ -59,7 +66,7 @@ export const BizForgeSidebar = () => {
 
       <nav className="flex-1 px-4 space-y-1">
         <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4 px-2">
-          {isAdminArea ? 'Global Admin' : 'Company Portal'}
+          {isAdminArea ? 'Platform Admin' : 'Company Portal'}
         </div>
         {links.map((link) => (
           <Link
@@ -79,7 +86,7 @@ export const BizForgeSidebar = () => {
       </nav>
 
       <div className="p-4 mt-auto border-t">
-        {user?.role === 'super_admin' && (
+        {isSuperAdmin && (
           <Link 
             href={isAdminArea ? '/portal/dashboard' : '/admin/dashboard'}
             className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors px-3 py-2"

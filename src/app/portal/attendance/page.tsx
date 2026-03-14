@@ -7,18 +7,36 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Play, Square, Clock, Calendar as CalendarIcon } from 'lucide-react';
-import { useAuth } from '@/lib/mock-auth';
+import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection } from '@/firebase';
+import { doc, collection } from 'firebase/firestore';
 
 export default function AttendancePage() {
-  const { user } = useAuth();
+  const { user } = useUser();
+  const firestore = useFirestore();
   const [activeShift, setActiveShift] = useState(false);
   
+  // Fetch user profile to check roles
+  const userRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
+  const { data: profile } = useDoc(userRef);
+
+  // For a real app, we'd fetch actual attendance records here
+  const attendanceQuery = useMemoFirebase(() => {
+    if (!user) return null;
+    // Note: In a real multi-tenant app, we'd use the companyId from the user's role
+    // For now, we'll assume a path like /companies/nebula-tech/attendance
+    return collection(firestore, 'companies', 'nebula-tech', 'attendance');
+  }, [firestore, user]);
+
+  const { data: historyData, isLoading: isHistoryLoading } = useCollection(attendanceQuery);
+
   const history = [
     { date: '2024-05-20', in: '09:02 AM', out: '05:30 PM', total: '8h 28m', status: 'Present' },
     { date: '2024-05-19', in: '08:55 AM', out: '06:15 PM', total: '9h 20m', status: 'Overtime' },
     { date: '2024-05-18', in: '09:15 AM', out: '05:00 PM', total: '7h 45m', status: 'Under-time' },
     { date: '2024-05-17', in: '-', out: '-', total: '-', status: 'Absent' },
   ];
+
+  const isAdmin = profile?.globalRoles?.includes('super_admin') || profile?.globalRoles?.includes('admin');
 
   return (
     <div className="space-y-8">
@@ -102,7 +120,7 @@ export default function AttendancePage() {
         </Card>
       </div>
 
-      {user?.role !== 'employee' && (
+      {isAdmin && (
         <Card className="bg-surface border-border">
           <CardHeader>
             <CardTitle>Team Attendance Overview</CardTitle>
