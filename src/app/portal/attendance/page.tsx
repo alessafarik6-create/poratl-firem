@@ -15,13 +15,16 @@ import {
   Coffee, 
   UserCheck,
   History,
-  Timer
+  Timer,
+  Smartphone,
+  Settings
 } from 'lucide-react';
 import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection } from '@/firebase';
 import { doc, collection, serverTimestamp, query, orderBy, limit } from 'firebase/firestore';
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import Link from 'next/link';
 
 type AttendanceType = 'check_in' | 'break_start' | 'break_end' | 'check_out';
 
@@ -44,14 +47,14 @@ export default function AttendancePage() {
   const userRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
   const { data: profile } = useDoc(userRef);
 
-  const companyId = profile?.companyId || 'nebula-tech';
+  const companyId = profile?.companyId;
 
   const attendanceQuery = useMemoFirebase(() => {
     if (!firestore || !companyId) return null;
     return query(
       collection(firestore, 'companies', companyId, 'attendance'),
       orderBy('timestamp', 'desc'),
-      limit(50)
+      limit(100)
     );
   }, [firestore, companyId]);
 
@@ -111,9 +114,21 @@ export default function AttendancePage() {
           <h1 className="text-3xl font-bold">Docházkový systém</h1>
           <p className="text-muted-foreground mt-2">Pracovní prostor: <span className="text-primary font-semibold">{companyId}</span></p>
         </div>
-        <div className="bg-surface p-4 rounded-xl border border-primary/20 shadow-lg text-right min-w-[200px]">
-          <p className="text-4xl font-mono font-bold text-primary">{currentTime || '--:--:--'}</p>
-          <p className="text-sm text-muted-foreground font-medium">{new Date().toLocaleDateString('cs-CZ', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
+        <div className="flex items-center gap-4">
+          {isAdmin && (
+            <Link href="/portal/attendance/terminal/settings">
+              <Button variant="outline" size="icon" title="Nastavení terminálů"><Settings className="w-4 h-4" /></Button>
+            </Link>
+          )}
+          <Link href="/portal/attendance/terminal">
+            <Button className="gap-2 bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20">
+              <Smartphone className="w-4 h-4" /> Mobilní terminál
+            </Button>
+          </Link>
+          <div className="bg-surface p-4 rounded-xl border border-primary/20 shadow-lg text-right min-w-[200px] hidden sm:block">
+            <p className="text-4xl font-mono font-bold text-primary">{currentTime || '--:--:--'}</p>
+            <p className="text-sm text-muted-foreground font-medium">{new Date().toLocaleDateString('cs-CZ', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
+          </div>
         </div>
       </div>
 
@@ -218,7 +233,7 @@ export default function AttendancePage() {
                       <TableHead>Datum</TableHead>
                       <TableHead>Čas</TableHead>
                       <TableHead>Typ akce</TableHead>
-                      <TableHead className="text-right">Poznámka</TableHead>
+                      <TableHead className="text-right">Terminál</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -234,7 +249,7 @@ export default function AttendancePage() {
                           {row.timestamp?.toDate ? row.timestamp.toDate().toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }) : '--:--'}
                         </TableCell>
                         <TableCell>{getStatusBadge(row.type)}</TableCell>
-                        <TableCell className="text-right text-muted-foreground text-xs italic">-</TableCell>
+                        <TableCell className="text-right text-muted-foreground text-xs">{row.terminalId || 'Web'}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -268,6 +283,7 @@ export default function AttendancePage() {
                         <TableHead>Datum</TableHead>
                         <TableHead>Čas</TableHead>
                         <TableHead>Akce</TableHead>
+                        <TableHead className="text-right">Zařízení</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -281,6 +297,7 @@ export default function AttendancePage() {
                             {row.timestamp?.toDate ? row.timestamp.toDate().toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }) : '--:--'}
                           </TableCell>
                           <TableCell>{getStatusBadge(row.type)}</TableCell>
+                          <TableCell className="text-right text-muted-foreground text-xs italic">{row.terminalId || 'Web'}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
