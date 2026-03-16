@@ -125,7 +125,19 @@ function buildLicenseForFirestore(update: LicenseUpdate): Record<string, unknown
     enabledModules,
   };
 }
+export async function getCompany(
+  db: Firestore,
+  id: string
+): Promise<CompanyWithLicense | null> {
 
+  const doc = await db.collection(ORGANIZATIONS_COLLECTION).doc(id).get()
+
+  if (!doc.exists) {
+    return null
+  }
+
+  return normalizeCompanyFromFirestore(doc.data() as any, doc.id)
+}
 /**
  * Update company: isActive and/or license. Merges license with existing; sets updatedAt.
  */
