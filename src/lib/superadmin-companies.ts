@@ -100,8 +100,13 @@ export function normalizeCompanyFromFirestore(
  */
 export async function getCompanies(db: Firestore): Promise<CompanyWithLicense[]> {
   const snapshot = await db.collection(ORGANIZATIONS_COLLECTION).get();
-  const list = snapshot.docs.map((doc) => normalizeCompanyFromFirestore(doc.data(), doc.id));
+
+  const list = snapshot.docs.map((doc: any) =>
+    normalizeCompanyFromFirestore(doc.data(), doc.id)
+  );
+
   list.sort((a, b) => (a.name || "").localeCompare(b.name || "", "cs"));
+
   return list;
 }
 
