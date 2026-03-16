@@ -12,7 +12,10 @@ export async function GET() {
   const db = getAdminFirestore();
   if (!db) {
     return NextResponse.json(
-      { error: "Firebase Admin není nakonfigurován. Nastavte FIREBASE_CLIENT_EMAIL a FIREBASE_PRIVATE_KEY v .env.local." },
+      {
+        error:
+          "Firebase Admin není nakonfigurován. Nastavte FIREBASE_CLIENT_EMAIL a FIREBASE_PRIVATE_KEY v .env.local.",
+      },
       { status: 503 }
     );
   }
@@ -23,7 +26,7 @@ export async function GET() {
   } catch (e) {
     console.error("[superadmin companies]", e);
     return NextResponse.json(
-      { error: "Načtení organizací se nezdařilo." },
+      { error: "Nepodařilo se načíst firmy." },
       { status: 500 }
     );
   }
