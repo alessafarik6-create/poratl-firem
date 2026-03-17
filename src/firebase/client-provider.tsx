@@ -1,27 +1,34 @@
-'use client';
+"use client";
 
-import React, { type ReactNode, useEffect, useState } from 'react';
-import { FirebaseProvider } from '@/firebase/provider';
-import { initializeFirebase } from './init';
+import React, { type ReactNode, useMemo } from "react";
+import { FirebaseProvider } from "@/firebase/provider";
+import { initializeFirebase } from "./init";
 
 interface FirebaseClientProviderProps {
   children: ReactNode;
 }
 
 /**
- * Component ensuring Firebase is initialized only on the client side.
- * Wraps children in the provider even during SSR to avoid context errors.
+ * Client-side Firebase bootstrap.
+ * Initializes Firebase synchronously on the client so auth is available
+ * immediately after hydration and survives mobile redirects more reliably.
  */
-export function FirebaseClientProvider({ children }: FirebaseClientProviderProps) {
-  const [firebaseServices, setFirebaseServices] = useState<ReturnType<typeof initializeFirebase> | null>(null);
+export function FirebaseClientProvider({
+  children,
+}: FirebaseClientProviderProps) {
+  const firebaseServices = useMemo(() => {
+    if (typeof window === "undefined") {
+      return null;
+    }
 
-  useEffect(() => {
-    // Only initialize in browser after hydration
-    setFirebaseServices(initializeFirebase());
+    try {
+      return initializeFirebase();
+    } catch (error) {
+      console.error("[FirebaseClientProvider] initializeFirebase failed:", error);
+      return null;
+    }
   }, []);
 
-  // Always render the Provider so that child hooks like useFirebase() 
-  // find the context during SSR, preventing "missing provider" errors.
   return (
     <FirebaseProvider
       firebaseApp={firebaseServices?.firebaseApp ?? null}
