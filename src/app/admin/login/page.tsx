@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,7 +16,6 @@ import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export default function AdminLoginPage() {
-  const router = useRouter();
   const { toast } = useToast();
 
   const [username, setUsername] = useState("");
@@ -43,6 +41,7 @@ export default function AdminLoginPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
+        cache: "no-store",
         body: JSON.stringify({
           username: trimmedUsername,
           password,
@@ -57,6 +56,7 @@ export default function AdminLoginPage() {
             ? data.error
             : "Přihlášení se nezdařilo."
         );
+        setLoading(false);
         return;
       }
 
@@ -65,12 +65,13 @@ export default function AdminLoginPage() {
         description: "Vítejte v globální administraci.",
       });
 
-      router.replace("/admin/dashboard");
-      router.refresh();
+      // Na mobilu je spolehlivější plný reload než router.push(),
+      // aby se session cookie jistě propsala do dalšího requestu.
+      window.location.assign("/admin/dashboard");
+      return;
     } catch (err) {
       console.error("[AdminLoginPage] login failed", err);
       setError("Připojení se nezdařilo. Zkuste to znovu.");
-    } finally {
       setLoading(false);
     }
   };
@@ -106,8 +107,8 @@ export default function AdminLoginPage() {
               <Alert className="border-slate-200 bg-slate-50 text-slate-700">
                 <Info className="h-4 w-4" />
                 <AlertDescription className="text-sm">
-                  Pokud se na mobilu po přihlášení stránka neobnoví okamžitě,
-                  vyčkejte chvíli nebo zkuste stránku znovu načíst.
+                  Přihlášení do administrace používá zabezpečenou session. Po
+                  úspěšném přihlášení proběhne přesměrování do administrace.
                 </AlertDescription>
               </Alert>
 
