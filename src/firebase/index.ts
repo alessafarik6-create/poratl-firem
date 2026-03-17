@@ -3,6 +3,7 @@
 export * from './init';
 export * from './provider';
 export * from './client-provider';
+export * from './storage';
 export * from './firestore/use-company';
 export * from './firestore/use-organization';
 export * from './firestore/use-collection';

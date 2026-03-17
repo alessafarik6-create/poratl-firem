@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Plus, Loader2, Briefcase, Calendar, Building2, FileStack } from "lucide-react";
 import { useFirestore, useCollection, useMemoFirebase, useUser, useDoc } from '@/firebase';
-import { collection, doc, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, doc, addDoc, serverTimestamp, query, where, getDocs, setDoc } from 'firebase/firestore';
 import {
   Dialog,
   DialogContent,
@@ -68,7 +68,14 @@ export default function JobsPage() {
     status: 'nová',
     budget: '',
     startDate: '',
-    endDate: ''
+    endDate: '',
+    measuring: '',
+    measuringDetails: '',
+    quickCustomerName: '',
+    quickCustomerEmail: '',
+    quickCustomerPhone: '',
+    quickCustomerAddress: '',
+    quickCustomerNotes: '',
   });
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
   const [templateValues, setTemplateValues] = useState<JobTemplateValues>({});
@@ -90,27 +97,121 @@ export default function JobsPage() {
     setIsSubmitting(true);
 
     try {
-      const colRef = collection(firestore, 'companies', companyId, 'jobs');
+      const jobsColRef = collection(firestore, 'companies', companyId, 'jobs');
+      const customersColRef = collection(firestore, 'companies', companyId, 'customers');
+
+      let customerId = newJob.customerId || '';
+      let customerSnapshot: any | null = null;
+
+      // Automatic customer creation / linking when customer is filled inline
+      if (
+        !customerId &&
+        (newJob.quickCustomerEmail ||
+          newJob.quickCustomerPhone ||
+          newJob.quickCustomerName)
+      ) {
+        const candidates: any[] = [];
+
+        if (newJob.quickCustomerEmail) {
+          const q = query(customersColRef, where('email', '==', newJob.quickCustomerEmail));
+          const snap = await getDocs(q);
+          snap.forEach((d) => candidates.push({ id: d.id, ...d.data() }));
+        }
+
+        if (!candidates.length && newJob.quickCustomerPhone) {
+          const q = query(customersColRef, where('phone', '==', newJob.quickCustomerPhone));
+          const snap = await getDocs(q);
+          snap.forEach((d) => candidates.push({ id: d.id, ...d.data() }));
+        }
+
+        if (!candidates.length && newJob.quickCustomerName) {
+          const q = query(customersColRef, where('companyName', '==', newJob.quickCustomerName));
+          const snap = await getDocs(q);
+          snap.forEach((d) => candidates.push({ id: d.id, ...d.data() }));
+        }
+
+        if (candidates.length) {
+          customerSnapshot = candidates[0];
+          customerId = customerSnapshot.id;
+        } else {
+          const newCustomerRef = doc(customersColRef);
+          customerId = newCustomerRef.id;
+          const customerPayload = {
+            companyName: newJob.quickCustomerName || '',
+            email: newJob.quickCustomerEmail || '',
+            phone: newJob.quickCustomerPhone || '',
+            address: newJob.quickCustomerAddress || '',
+            notes: newJob.quickCustomerNotes || '',
+            companyId,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+          };
+          await setDoc(newCustomerRef, customerPayload);
+          customerSnapshot = { id: customerId, ...customerPayload };
+
+          toast({
+            title: 'Zákazník vytvořen',
+            description:
+              customerPayload.companyName ||
+              customerPayload.email ||
+              customerPayload.phone ||
+              'Nový zákazník byl přidán.',
+          });
+        }
+      }
+
+      const customerName =
+        customerSnapshot?.companyName ||
+        newJob.quickCustomerName ||
+        (customerSnapshot
+          ? `${customerSnapshot.firstName || ''} ${customerSnapshot.lastName || ''}`.trim()
+          : '');
+
       const payload: Record<string, unknown> = {
-        ...newJob,
+        name: newJob.name,
+        description: newJob.description,
+        status: newJob.status,
         budget: newJob.budget === '' ? 0 : Number(newJob.budget),
+        startDate: newJob.startDate,
+        endDate: newJob.endDate,
+        measuring: newJob.measuring,
+        measuringDetails: newJob.measuringDetails,
         companyId,
         assignedEmployeeIds: [user.uid],
+        customerId: customerId || null,
+        customerName,
+        customerPhone: customerSnapshot?.phone || newJob.quickCustomerPhone || '',
+        customerEmail: customerSnapshot?.email || newJob.quickCustomerEmail || '',
         createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
+        updatedAt: serverTimestamp(),
       };
       if (selectedTemplateId) {
         payload.templateId = selectedTemplateId;
         payload.templateValues = templateValues;
       }
-      await addDoc(colRef, payload);
+      await addDoc(jobsColRef, payload);
 
       toast({
         title: "Zakázka vytvořena",
         description: `Zakázka "${newJob.name}" byla úspěšně přidána.`
       });
       setIsNewJobOpen(false);
-      setNewJob({ name: '', description: '', customerId: '', status: 'nová', budget: '', startDate: '', endDate: '' });
+      setNewJob({
+        name: '',
+        description: '',
+        customerId: '',
+        status: 'nová',
+        budget: '',
+        startDate: '',
+        endDate: '',
+        measuring: '',
+        measuringDetails: '',
+        quickCustomerName: '',
+        quickCustomerEmail: '',
+        quickCustomerPhone: '',
+        quickCustomerAddress: '',
+        quickCustomerNotes: '',
+      });
       setSelectedTemplateId('');
       setTemplateValues({});
     } catch (error) {
@@ -154,16 +255,22 @@ export default function JobsPage() {
               </Link>
               <Dialog open={isNewJobOpen} onOpenChange={setIsNewJobOpen}>
             <DialogTrigger asChild>
-              <Button className="gap-2">
+              <Button className="gap-2 min-h-[44px]">
                 <Plus className="w-4 h-4" /> Nová zakázka
               </Button>
             </DialogTrigger>
-            <DialogContent className="bg-white border-slate-200 text-slate-900 max-w-2xl" data-portal-dialog>
-              <DialogHeader>
+            <DialogContent
+              className="bg-white border-slate-200 text-slate-900 max-w-3xl w-[95vw] sm:w-full max-h-[90vh] flex flex-col"
+              data-portal-dialog
+            >
+              <DialogHeader className="shrink-0">
                 <DialogTitle>Vytvořit novou zakázku</DialogTitle>
                 <DialogDescription>Zadejte základní informace o novém projektu.</DialogDescription>
               </DialogHeader>
-              <form onSubmit={handleCreateJob} className="space-y-4 py-4">
+              <form
+                onSubmit={handleCreateJob}
+                className="space-y-4 py-4 pr-1 sm:pr-0 flex-1 overflow-y-auto"
+              >
                 {templates && templates.length > 0 && (
                   <div className="space-y-2">
                     <Label>Šablona (volitelné)</Label>
@@ -252,10 +359,93 @@ export default function JobsPage() {
                       onChange={e => setNewJob({...newJob, endDate: e.target.value})}
                     />
                   </div>
+                  <div className="space-y-2 col-span-2 border-t pt-4 mt-2">
+                    <p className="text-xs uppercase font-bold text-muted-foreground tracking-wider">
+                      Rychlé údaje o zákazníkovi
+                    </p>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2 col-span-2">
+                        <Label htmlFor="quickCustomerName">Název firmy / jméno</Label>
+                        <Input
+                          id="quickCustomerName"
+                          value={newJob.quickCustomerName}
+                          onChange={(e) =>
+                            setNewJob({ ...newJob, quickCustomerName: e.target.value })
+                          }
+                          placeholder="Např. Novákovi s.r.o."
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="quickCustomerEmail">Email</Label>
+                        <Input
+                          id="quickCustomerEmail"
+                          type="email"
+                          value={newJob.quickCustomerEmail}
+                          onChange={(e) =>
+                            setNewJob({ ...newJob, quickCustomerEmail: e.target.value })
+                          }
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="quickCustomerPhone">Telefon</Label>
+                        <Input
+                          id="quickCustomerPhone"
+                          value={newJob.quickCustomerPhone}
+                          onChange={(e) =>
+                            setNewJob({ ...newJob, quickCustomerPhone: e.target.value })
+                          }
+                        />
+                      </div>
+                      <div className="space-y-2 col-span-2">
+                        <Label htmlFor="quickCustomerAddress">Adresa</Label>
+                        <Input
+                          id="quickCustomerAddress"
+                          value={newJob.quickCustomerAddress}
+                          onChange={(e) =>
+                            setNewJob({ ...newJob, quickCustomerAddress: e.target.value })
+                          }
+                        />
+                      </div>
+                      <div className="space-y-2 col-span-2">
+                        <Label htmlFor="quickCustomerNotes">Poznámka</Label>
+                        <Textarea
+                          id="quickCustomerNotes"
+                          value={newJob.quickCustomerNotes}
+                          onChange={(e) =>
+                            setNewJob({ ...newJob, quickCustomerNotes: e.target.value })
+                          }
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="space-y-2 col-span-2">
+                    <Label htmlFor="measuring">Měření</Label>
+                    <Textarea
+                      id="measuring"
+                      value={newJob.measuring}
+                      onChange={(e) =>
+                        setNewJob({ ...newJob, measuring: e.target.value })
+                      }
+                      placeholder="Rozsah a poznámky k měření..."
+                    />
+                  </div>
+                  <div className="space-y-2 col-span-2">
+                    <Label htmlFor="measuringDetails">Detaily měření</Label>
+                    <Textarea
+                      id="measuringDetails"
+                      value={newJob.measuringDetails}
+                      onChange={(e) =>
+                        setNewJob({ ...newJob, measuringDetails: e.target.value })
+                      }
+                      placeholder="Konkrétní rozměry, poznámky k místu atd."
+                    />
+                  </div>
                 </div>
                 {selectedTemplate && (
                   <div className="border-t border-slate-200 pt-4 mt-4">
-                    <h4 className="text-sm font-semibold text-slate-700 mb-3">{selectedTemplate.name} – pole šablony</h4>
+                    <h4 className="text-sm font-semibold text-slate-700 mb-3">
+                      {selectedTemplate.name} – pole šablony
+                    </h4>
                     <JobTemplateFormFields
                       template={selectedTemplate as JobTemplate}
                       values={templateValues}
@@ -263,12 +453,35 @@ export default function JobsPage() {
                     />
                   </div>
                 )}
-                <DialogFooter>
-                  <Button type="submit" disabled={isSubmitting} className="w-full">
+              </form>
+              <div className="shrink-0 border-t border-slate-200 pt-3 mt-2 bg-white">
+                <DialogFooter className="flex flex-row justify-end gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="min-h-[44px]"
+                    onClick={() => setIsNewJobOpen(false)}
+                  >
+                    Zrušit
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="min-h-[44px]"
+                    form={undefined}
+                    onClick={(e) => {
+                      // Let the form handle submit via the first form element
+                      const dialogEl = (e.currentTarget as HTMLButtonElement).closest('div[data-portal-dialog]') as HTMLElement | null;
+                      const formEl = dialogEl?.querySelector('form') as HTMLFormElement | null;
+                      if (formEl) {
+                        formEl.requestSubmit();
+                      }
+                    }}
+                  >
                     {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Vytvořit zakázku"}
                   </Button>
                 </DialogFooter>
-              </form>
+              </div>
             </DialogContent>
               </Dialog>
             </>
