@@ -2,19 +2,23 @@
 
 import { firebaseConfig } from '@/firebase/config';
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
+import { 
+  getAuth, 
+  setPersistence, 
+  browserLocalPersistence 
+} from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { connectAuthEmulator } from "firebase/auth";
 import { connectFirestoreEmulator } from "firebase/firestore";
+
 /**
  * Initializes the Firebase Client SDKs.
- * This logic is isolated to avoid circular dependencies.
  */
 export function initializeFirebase() {
   if (!getApps().length) {
     let firebaseApp;
+
     try {
-      // Attempt to initialize via Firebase App Hosting environment variables
       firebaseApp = initializeApp();
     } catch (e) {
       if (process.env.NODE_ENV === "production") {
@@ -26,7 +30,6 @@ export function initializeFirebase() {
     return getSdks(firebaseApp);
   }
 
-  // If already initialized, return the SDKs with the already initialized App
   return getSdks(getApp());
 }
 
@@ -34,7 +37,15 @@ export function getSdks(firebaseApp: FirebaseApp) {
   const auth = getAuth(firebaseApp);
   const firestore = getFirestore(firebaseApp);
 
+  // 🔥 KRITICKÉ PRO MOBIL LOGIN
   if (typeof window !== "undefined") {
+    setPersistence(auth, browserLocalPersistence).catch((err) => {
+      console.error("Firebase persistence error:", err);
+    });
+  }
+
+  // 🔧 emulátory pouze v developmentu
+  if (process.env.NODE_ENV === "development" && typeof window !== "undefined") {
     try {
       connectAuthEmulator(auth, "http://127.0.0.1:9099", { disableWarnings: true });
     } catch {}
