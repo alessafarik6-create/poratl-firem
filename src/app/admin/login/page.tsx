@@ -37,6 +37,11 @@ export default function AdminLoginPage() {
     setLoading(true);
 
     try {
+      console.log("[AdminLoginPage] submitting login", {
+        trimmedUsername,
+        userAgent:
+          typeof navigator !== "undefined" ? navigator.userAgent : "ssr",
+      });
       const res = await fetch("/api/superadmin/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -51,6 +56,10 @@ export default function AdminLoginPage() {
       const data = await res.json().catch(() => ({}));
 
       if (!res.ok) {
+        console.warn("[AdminLoginPage] login failed response", {
+          status: res.status,
+          data,
+        });
         setError(
           typeof data?.error === "string"
             ? data.error
@@ -64,6 +73,8 @@ export default function AdminLoginPage() {
         title: "Přihlášení úspěšné",
         description: "Vítejte v globální administraci.",
       });
+
+      console.log("[AdminLoginPage] login success", { status: res.status });
 
       // Na mobilu je spolehlivější plný reload než router.push(),
       // aby se session cookie jistě propsala do dalšího requestu.

@@ -29,18 +29,42 @@ export default function AdminLayout({
 
     const checkSession = async () => {
       try {
-        const res = await fetch("/api/superadmin/session", {
-          method: "GET",
-          credentials: "include",
-          cache: "no-store",
-          headers: {
-            Accept: "application/json",
-          },
+        const fetchOnce = async () => {
+          const res = await fetch("/api/superadmin/session", {
+            method: "GET",
+            credentials: "include",
+            cache: "no-store",
+            headers: {
+              Accept: "application/json",
+            },
+          });
+          return res;
+        };
+
+        console.debug("[AdminLayout] checking session", {
+          pathname,
+          userAgent: typeof navigator !== "undefined" ? navigator.userAgent : "ssr",
         });
 
+        let res = await fetchOnce();
         if (cancelled) return;
 
+        // Mobile browsers can be slightly slower to persist cookies from the
+        // previous navigation. Retry once for 401/unauthorized responses.
+        if (!res.ok && res.status === 401) {
+          console.warn("[AdminLayout] session unauthorized (401), retrying once after grace", {
+            pathname,
+          });
+          await new Promise((r) => setTimeout(r, 800));
+          res = await fetchOnce();
+          if (cancelled) return;
+        }
+
         if (!res.ok) {
+          console.warn("[AdminLayout] session invalid, redirecting to /admin/login", {
+            pathname,
+            status: res.status,
+          });
           setSession(null);
           window.location.replace("/admin/login");
           return;
@@ -51,11 +75,20 @@ export default function AdminLayout({
         if (cancelled) return;
 
         if (!data?.username) {
+          console.warn("[AdminLayout] session missing username, redirecting", {
+            pathname,
+            data,
+          });
           setSession(null);
           window.location.replace("/admin/login");
           return;
         }
 
+        console.debug("[AdminLayout] session ok", {
+          pathname,
+          username: data.username,
+          role: data.role,
+        });
         setSession(data);
       } catch (error) {
         console.error("[AdminLayout] session check failed", error);

@@ -16,20 +16,27 @@ export interface SuperadminSession {
 }
 
 function getCookieOptions() {
+  // Mobile browsers can be stricter with `SameSite=None` (requires `Secure`),
+  // especially on non-HTTPS dev setups. Use `lax` + only enable `secure`
+  // in production to ensure the cookie is actually stored and sent.
+  const isProd = process.env.NODE_ENV === "production";
+
   return {
     httpOnly: true,
-    secure: true,
-    sameSite: "none" as const,
+    secure: isProd,
+    sameSite: "lax" as const,
     path: "/",
     maxAge: COOKIE_MAX_AGE,
   };
 }
 
 function getClearCookieOptions() {
+  const isProd = process.env.NODE_ENV === "production";
+
   return {
     httpOnly: true,
-    secure: true,
-    sameSite: "none" as const,
+    secure: isProd,
+    sameSite: "lax" as const,
     path: "/",
     maxAge: 0,
     expires: new Date(0),
