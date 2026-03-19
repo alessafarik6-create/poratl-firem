@@ -15,7 +15,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection } from "@/firebase";
-import { doc, collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { doc, collection, addDoc, serverTimestamp, updateDoc, deleteDoc } from "firebase/firestore";
 import { ChevronLeft, Plus, Loader2, FileStack } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { JobTemplate, JobTemplateSection, JobTemplateField } from "@/lib/job-templates";
@@ -55,13 +55,58 @@ export default function JobTemplatesPage() {
   const { data: templates, isLoading } = useCollection(templatesRef);
 
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogMode, setDialogMode] = useState<"create" | "edit">("create");
+  const [activeTemplateId, setActiveTemplateId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [form, setForm] = useState<Pick<JobTemplate, "name" | "productType" | "description" | "sections">>({
     name: "",
     productType: "",
     description: "",
     sections: [defaultSection()],
   });
+
+  const resetFormToEmpty = () => {
+    setForm({
+      name: "",
+      productType: "",
+      description: "",
+      sections: [defaultSection()],
+    });
+  };
+
+  const deepClone = <T,>(value: T): T => JSON.parse(JSON.stringify(value));
+
+  const templateToForm = (
+    tpl: JobTemplate & { id?: string } | null | undefined
+  ): Pick<JobTemplate, "name" | "productType" | "description" | "sections"> => {
+    if (!tpl) {
+      return {
+        name: "",
+        productType: "",
+        description: "",
+        sections: [defaultSection()],
+      };
+    }
+
+    return {
+      name: tpl.name || "",
+      productType: tpl.productType || "",
+      description: tpl.description || "",
+      sections: deepClone(tpl.sections || []),
+    };
+  };
+
+  const regenerateIdsInSections = (sections: JobTemplateSection[]): JobTemplateSection[] => {
+    return (sections || []).map((s) => ({
+      ...deepClone(s),
+      id: generateId(),
+      fields: (s.fields || []).map((f) => ({
+        ...deepClone(f),
+        id: generateId(),
+      })),
+    }));
+  };
 
   const addSection = () => {
     setForm((prev) => ({
@@ -117,15 +162,34 @@ export default function JobTemplatesPage() {
     }
     setSaving(true);
     try {
-      await addDoc(templatesRef, {
+      const payload = {
         ...form,
         sections: form.sections.map((s, i) => ({ ...s, order: i })),
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      });
-      toast({ title: "Šablona vytvořena", description: `"${form.name}" byla uložena.` });
+      };
+
+      if (dialogMode === "edit" && activeTemplateId) {
+        const tplRef = doc(firestore, "companies", companyId, "jobTemplates", activeTemplateId);
+        await updateDoc(tplRef, {
+          ...payload,
+          updatedAt: serverTimestamp(),
+        });
+        toast({
+          title: "Šablona aktualizována",
+          description: `"${form.name}" byla aktualizována.`,
+        });
+      } else {
+        await addDoc(templatesRef, {
+          ...payload,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
+        toast({ title: "Šablona vytvořena", description: `"${form.name}" byla uložena.` });
+      }
+
       setDialogOpen(false);
-      setForm({ name: "", productType: "", description: "", sections: [defaultSection()] });
+      setActiveTemplateId(null);
+      setDialogMode("create");
+      resetFormToEmpty();
     } catch (e) {
       toast({ variant: "destructive", title: "Chyba", description: "Šablonu se nepodařilo uložit." });
     } finally {
@@ -164,15 +228,34 @@ export default function JobTemplatesPage() {
             Definujte typy projektů a pole, která se zobrazí při vytváření zakázky.
           </p>
         </div>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <Dialog
+          open={dialogOpen}
+          onOpenChange={(open) => {
+            setDialogOpen(open);
+            if (!open) {
+              setActiveTemplateId(null);
+              setDialogMode("create");
+              resetFormToEmpty();
+            }
+          }}
+        >
           <DialogTrigger asChild>
-            <Button className="gap-2 shrink-0">
+            <Button
+              className="gap-2 shrink-0"
+              onClick={() => {
+                setDialogMode("create");
+                setActiveTemplateId(null);
+                resetFormToEmpty();
+              }}
+            >
               <Plus className="w-4 h-4" /> Nová šablona
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-white border-slate-200 text-slate-900" data-portal-dialog>
             <DialogHeader>
-              <DialogTitle>Nová šablona zakázky</DialogTitle>
+              <DialogTitle>
+                {dialogMode === "edit" ? "Upravit šablonu zakázky" : "Nová šablona zakázky"}
+              </DialogTitle>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="grid gap-4 sm:grid-cols-2">
@@ -263,7 +346,13 @@ export default function JobTemplatesPage() {
                 Zrušit
               </Button>
               <Button onClick={handleSave} disabled={saving}>
-                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Vytvořit šablonu"}
+                {saving ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : dialogMode === "edit" ? (
+                  "Uložit změny"
+                ) : (
+                  "Vytvořit šablonu"
+                )}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -295,6 +384,127 @@ export default function JobTemplatesPage() {
                     Použít při vytváření zakázky
                   </Button>
                 </Link>
+
+                <div className="flex flex-col sm:flex-row gap-2 mt-3">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => {
+                      setDialogMode("edit");
+                      setActiveTemplateId(t.id);
+                      setForm(templateToForm(t));
+                      setDialogOpen(true);
+                    }}
+                  >
+                    Upravit
+                  </Button>
+
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="w-full"
+                    disabled={saving}
+                    onClick={async () => {
+                      try {
+                        if (!templatesRef) return;
+                        setSaving(true);
+                        const baseName = (t.name || "").trim() || "Šablona";
+                        const newName = baseName.endsWith(" - kopie")
+                          ? baseName
+                          : `${baseName} - kopie`;
+
+                        const sectionsCopy = regenerateIdsInSections(
+                          deepClone((t.sections || []) as JobTemplateSection[])
+                        );
+
+                        await addDoc(templatesRef, {
+                          name: newName,
+                          productType: t.productType || "",
+                          description: t.description || "",
+                          sections: sectionsCopy,
+                          createdAt: serverTimestamp(),
+                          updatedAt: serverTimestamp(),
+                        });
+
+                        toast({
+                          title: "Šablona zkopírována",
+                          description: `"${t.name}" → "${newName}".`,
+                        });
+                      } catch (e) {
+                        console.error("[JobTemplatesPage] copy failed", e);
+                        toast({
+                          variant: "destructive",
+                          title: "Chyba",
+                          description: "Šablonu se nepodařilo zkopírovat.",
+                        });
+                      } finally {
+                        setSaving(false);
+                      }
+                    }}
+                  >
+                    Kopírovat
+                  </Button>
+
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className="w-full"
+                    disabled={saving || deleting}
+                    onClick={async () => {
+                      const templateId = t.id;
+                      if (!templateId) {
+                        toast({
+                          variant: "destructive",
+                          title: "Chyba",
+                          description: "Nelze smazat šablonu: chybí ID.",
+                        });
+                        return;
+                      }
+
+                      const ok = window.confirm(
+                        `Opravdu chcete smazat šablonu "${t.name}"?`
+                      );
+                      if (!ok) return;
+
+                      try {
+                        setDeleting(true);
+                        const tplRef = doc(
+                          firestore,
+                          "companies",
+                          companyId,
+                          "jobTemplates",
+                          templateId
+                        );
+                        await deleteDoc(tplRef);
+
+                        // Pokud jsme právě upravovali/synchronizovali smazanou šablonu
+                        if (activeTemplateId === templateId) {
+                          setDialogOpen(false);
+                          setDialogMode("create");
+                          setActiveTemplateId(null);
+                          resetFormToEmpty();
+                        }
+
+                        toast({
+                          title: "Šablona smazána",
+                          description: `"${t.name}" byla odstraněna.`,
+                        });
+                      } catch (e) {
+                        console.error("[JobTemplatesPage] delete failed", e);
+                        toast({
+                          variant: "destructive",
+                          title: "Chyba",
+                          description: "Šablonu se nepodařilo smazat.",
+                        });
+                      } finally {
+                        setDeleting(false);
+                      }
+                    }}
+                  >
+                    Smazat
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           ))}
