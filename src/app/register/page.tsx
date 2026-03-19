@@ -8,11 +8,19 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Building2, Loader2, ArrowLeft } from 'lucide-react';
+import { Loader2, ArrowLeft } from 'lucide-react';
+import { Logo } from '@/components/ui/logo';
+import { PLATFORM_NAME } from '@/lib/platform-brand';
 import Image from 'next/image';
 import Link from 'next/link';
-import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
-import { doc, setDoc, writeBatch, serverTimestamp } from 'firebase/firestore';
+import {
+  createUserWithEmailAndPassword,
+  updateProfile,
+  fetchSignInMethodsForEmail,
+  deleteUser,
+  type User,
+} from 'firebase/auth';
+import { doc, writeBatch, serverTimestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { ORGANIZATIONS_COLLECTION, COMPANIES_COLLECTION, USERS_COLLECTION } from '@/lib/firestore-collections';
 import { DEFAULT_LICENSE } from '@/lib/license-modules';
@@ -33,6 +41,11 @@ type LookupCompanyResult = {
   address: LookupCompanyAddress;
   establishedAt?: string | null;
 };
+
+/** Jednotná normalizace e-mailu pro Firebase (registrace i přihlášení). */
+function normalizeEmail(email: string): string {
+  return email.trim().toLowerCase();
+}
 
 export default function RegisterPage() {
   const { auth, firestore: db, areServicesAvailable } = useFirebase();
@@ -190,6 +203,9 @@ export default function RegisterPage() {
     }
     setLoading(true);
 
+    /** Po úspěšném createUserWithEmailAndPassword – pro případný rollback při chybě Firestore / profilu. */
+    let createdUser: User | null = null;
+
     try {
       const street = formData.addressStreetAndNumber.trim();
       const city = formData.addressCity.trim();
@@ -202,7 +218,27 @@ export default function RegisterPage() {
           title: 'Chybí adresa firmy',
           description: 'Vyplňte prosím ulici a číslo, město, PSČ a stát.',
         });
-        setLoading(false);
+        return;
+      }
+
+      const normalizedEmail = normalizeEmail(formData.email);
+      if (!normalizedEmail) {
+        toast({
+          variant: 'destructive',
+          title: 'Neplatný e-mail',
+          description: 'Zadejte prosím platnou e-mailovou adresu.',
+        });
+        return;
+      }
+
+      const existingMethods = await fetchSignInMethodsForEmail(auth, normalizedEmail);
+      if (existingMethods.length > 0) {
+        toast({
+          variant: 'destructive',
+          title: 'E-mail je již registrován',
+          description:
+            'Účet s tímto e-mailem už v systému existuje. Přihlaste se, nebo použijte jinou adresu.',
+        });
         return;
       }
 
@@ -211,9 +247,15 @@ export default function RegisterPage() {
         .join('\n')
         .trim();
 
-      // 1. Create Firebase Auth user
-      const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
+      // 1. Firebase Authentication – nejdřív účet, teprve potom zápis do Firestore
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        normalizedEmail,
+        formData.password
+      );
       const user = userCredential.user;
+      createdUser = user;
+
       await updateProfile(user, { displayName: formData.adminName });
 
       // 2. Generate organization/company id (slug + random suffix)
@@ -227,7 +269,7 @@ export default function RegisterPage() {
         companyName: formData.companyName,
         name: formData.companyName,
         slug,
-        email: formData.email,
+        email: normalizedEmail,
         ico: formData.ico,
         dic: formData.dic || null,
         legalForm: formData.legalForm || null,
@@ -273,7 +315,7 @@ export default function RegisterPage() {
       // 5. User document linked to organization
       batch.set(doc(db, USERS_COLLECTION, user.uid), {
         id: user.uid,
-        email: formData.email,
+        email: normalizedEmail,
         displayName: formData.adminName,
         companyId,
         role: 'owner',
@@ -294,7 +336,7 @@ export default function RegisterPage() {
         userId: user.uid,
         firstName: formData.adminName.split(' ')[0] ?? formData.adminName,
         lastName: formData.adminName.split(' ').slice(1).join(' ') || '',
-        email: formData.email,
+        email: normalizedEmail,
         jobTitle: 'Majitel firmy',
         role: 'owner',
         isActive: true,
@@ -304,18 +346,43 @@ export default function RegisterPage() {
 
       await batch.commit();
 
+      createdUser = null;
+
       toast({
         title: "Registrace úspěšná",
-        description: "Vaše firma byla zaregistrována. Vítejte v BizForge!"
+        description: `Vaše firma byla zaregistrována. Vítejte v ${PLATFORM_NAME}!`
       });
 
       router.push('/portal/dashboard');
-    } catch (error: any) {
-      console.error(error);
+    } catch (error: unknown) {
+      const err = error as { code?: string; message?: string };
+
+      if (createdUser) {
+        try {
+          await deleteUser(createdUser);
+        } catch (rollbackErr: unknown) {
+          console.error('[register] rollback: deleteUser failed', rollbackErr);
+        }
+      }
+
+      console.error('[register] registration failed', error);
+
+      let description =
+        err?.message || 'Nepodařilo se dokončit registraci. Zkuste to prosím znovu.';
+
+      if (err?.code === 'auth/email-already-in-use') {
+        description =
+          'Tento e-mail je již obsazený. Přihlaste se nebo zadejte jinou adresu.';
+      } else if (err?.code === 'auth/weak-password') {
+        description = 'Heslo je příliš slabé. Zvolte silnější heslo.';
+      } else if (err?.code === 'auth/invalid-email') {
+        description = 'Neplatný formát e-mailové adresy.';
+      }
+
       toast({
         variant: "destructive",
         title: "Chyba při registraci",
-        description: error.message || "Nepodařilo se vytvořit účet."
+        description,
       });
     } finally {
       setLoading(false);
@@ -326,7 +393,7 @@ export default function RegisterPage() {
     <div className="min-h-screen grid lg:grid-cols-2 bg-background">
       <div className="hidden lg:block relative bg-black overflow-hidden">
         <Image 
-          src="https://picsum.photos/seed/bizforge-register/1200/1200"
+          src="https://picsum.photos/seed/rajmondata-register/1200/1200"
           alt="Registrace pozadí"
           fill
           className="object-cover opacity-40 scale-105"
@@ -348,8 +415,8 @@ export default function RegisterPage() {
       <div className="flex items-center justify-center p-8 overflow-y-auto">
         <Card className="w-full max-w-xl bg-surface border-border shadow-2xl">
           <CardHeader className="space-y-2">
-            <div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center shadow-lg shadow-primary/20 mb-2">
-              <Building2 className="text-white w-7 h-7" />
+            <div className="mb-2 flex justify-start">
+              <Logo context="page" />
             </div>
             <CardTitle className="text-3xl font-bold tracking-tight">Registrace nové firmy</CardTitle>
             <CardDescription>Vytvořte si vlastní workspace a začněte spravovat svůj podnik.</CardDescription>

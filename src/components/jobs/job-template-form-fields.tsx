@@ -7,6 +7,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { JobTemplate, JobTemplateValues } from "@/lib/job-templates";
+import { cn } from "@/lib/utils";
+import {
+  LIGHT_FORM_CONTROL_CLASS,
+  LIGHT_SELECT_CONTENT_CLASS,
+  LIGHT_SELECT_TRIGGER_CLASS,
+} from "@/lib/light-form-control-classes";
 
 type Props = {
   template: JobTemplate;
@@ -46,7 +52,7 @@ export function JobTemplateFormFields({ template, values, onChange, className }:
                         onChange={(e) => setValue(key, e.target.value)}
                         placeholder={field.placeholder}
                         required={field.required}
-                        className="bg-white border-slate-200"
+                        className={cn(LIGHT_FORM_CONTROL_CLASS)}
                       />
                     )}
                     {field.type === "long_text" && (
@@ -56,7 +62,7 @@ export function JobTemplateFormFields({ template, values, onChange, className }:
                         placeholder={field.placeholder}
                         required={field.required}
                         rows={3}
-                        className="bg-white border-slate-200"
+                        className={cn(LIGHT_FORM_CONTROL_CLASS)}
                       />
                     )}
                     {field.type === "number" && (
@@ -66,7 +72,7 @@ export function JobTemplateFormFields({ template, values, onChange, className }:
                         onChange={(e) => setValue(key, e.target.value === "" ? null : Number(e.target.value))}
                         placeholder={field.placeholder}
                         required={field.required}
-                        className="bg-white border-slate-200"
+                        className={cn(LIGHT_FORM_CONTROL_CLASS)}
                       />
                     )}
                     {field.type === "measurement" && (
@@ -75,7 +81,7 @@ export function JobTemplateFormFields({ template, values, onChange, className }:
                         onChange={(e) => setValue(key, e.target.value)}
                         placeholder={field.placeholder || "např. 3.5 m"}
                         required={field.required}
-                        className="bg-white border-slate-200"
+                        className={cn(LIGHT_FORM_CONTROL_CLASS)}
                       />
                     )}
                     {field.type === "checkbox" && (
@@ -93,10 +99,10 @@ export function JobTemplateFormFields({ template, values, onChange, className }:
                         onValueChange={(v) => setValue(key, v)}
                         required={field.required}
                       >
-                        <SelectTrigger className="bg-white border-slate-200">
+                        <SelectTrigger className={cn(LIGHT_SELECT_TRIGGER_CLASS)}>
                           <SelectValue placeholder={field.placeholder || "Vyberte..."} />
                         </SelectTrigger>
-                        <SelectContent className="bg-white border-slate-200">
+                        <SelectContent className={cn(LIGHT_SELECT_CONTENT_CLASS)}>
                           {(field.options || []).map((opt) => (
                             <SelectItem key={opt.value} value={opt.value}>
                               {opt.label}
@@ -111,7 +117,7 @@ export function JobTemplateFormFields({ template, values, onChange, className }:
                         value={typeof value === "string" ? value : ""}
                         onChange={(e) => setValue(key, e.target.value)}
                         required={field.required}
-                        className="bg-white border-slate-200"
+                        className={cn(LIGHT_FORM_CONTROL_CLASS, "[color-scheme:light]")}
                       />
                     )}
                     {field.type === "notes" && (
@@ -120,7 +126,7 @@ export function JobTemplateFormFields({ template, values, onChange, className }:
                         onChange={(e) => setValue(key, e.target.value)}
                         placeholder={field.placeholder || "Poznámky..."}
                         rows={2}
-                        className="bg-white border-slate-200"
+                        className={cn(LIGHT_FORM_CONTROL_CLASS)}
                       />
                     )}
                   </div>

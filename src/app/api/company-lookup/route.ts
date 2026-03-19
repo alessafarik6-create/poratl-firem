@@ -211,7 +211,7 @@ export async function POST(req: Request) {
         signal: controller.signal,
         headers: {
           Accept: "application/json",
-          "User-Agent": "BizForge-company-lookup/1.0 (+https://ares.gov.cz)",
+          "User-Agent": "Rajmondata-company-lookup/1.0 (+https://ares.gov.cz)",
         },
       });
     } catch (e: unknown) {

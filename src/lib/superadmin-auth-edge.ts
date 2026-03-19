@@ -5,8 +5,8 @@ export const SUPERADMIN_COOKIE_NAME = "superadmin_session";
 const JWT_SECRET = new TextEncoder().encode(
   process.env.SUPERADMIN_JWT_SECRET || "superadmin-secret-change-in-production"
 );
-const JWT_ISSUER = "bizforge-superadmin";
-const JWT_AUDIENCE = "bizforge-admin";
+const JWT_ISSUER = "rajmondata-superadmin";
+const JWT_AUDIENCE = "rajmondata-admin";
 
 export interface SuperadminSession {
   username: string;

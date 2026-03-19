@@ -3,7 +3,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { 
   LayoutDashboard, 
   Building2, 
@@ -23,11 +23,21 @@ import {
   Smartphone
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Logo } from '@/components/ui/logo';
 import { useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 
-export const BizForgeSidebar = () => {
+export type BizForgeSidebarProps = {
+  /**
+   * Mobilní Sheet (Radix Dialog): po kliknutí nejdřív zavřít menu, navigaci až v dalším ticku.
+   * Eliminuje NotFoundError removeChild při současném unmountu portálu a Next.js navigaci.
+   */
+  mobileSheetClose?: () => void;
+};
+
+export const BizForgeSidebar = ({ mobileSheetClose }: BizForgeSidebarProps) => {
   const pathname = usePathname();
+  const router = useRouter();
   const { user } = useUser();
   const firestore = useFirestore();
 
@@ -65,34 +75,60 @@ export const BizForgeSidebar = () => {
 
   const links = isAdminArea ? adminLinks : portalLinks;
 
+  const linkClass = (href: string) =>
+    cn(
+      "flex items-center gap-3 px-3 py-3 sm:py-2.5 rounded-lg transition-colors min-h-[44px] sm:min-h-0 touch-manipulation",
+      pathname === href ||
+        (pathname.startsWith(href) &&
+          href !== "/portal/dashboard" &&
+          href !== "/admin/dashboard")
+        ? "bg-sidebar-accent text-sidebar-primary font-medium"
+        : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-primary"
+    );
+
+  const handleMobileNav = (href: string) => {
+    mobileSheetClose?.();
+    window.setTimeout(() => {
+      router.push(href);
+    }, 0);
+  };
+
   return (
     <div className="w-64 bg-sidebar border-r border-sidebar-border flex flex-col h-full sticky top-0 shrink-0">
       <div className="p-4 sm:p-6">
-        <h1 className="text-xl sm:text-2xl font-bold text-primary flex items-center gap-2">
-          <div className="w-8 h-8 bg-primary rounded flex items-center justify-center text-white shrink-0">B</div>
-          <span className="truncate">BizForge</span>
-        </h1>
+        <Link
+          href={isAdminArea ? '/admin/dashboard' : '/portal/dashboard'}
+          className="block outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring rounded-lg"
+        >
+          <Logo context="sidebar" className="max-w-full" />
+        </Link>
       </div>
 
       <nav className="flex-1 px-3 sm:px-4 space-y-0.5 overflow-y-auto min-h-0">
         <div className="text-xs font-semibold text-sidebar-foreground/70 uppercase tracking-wider mb-3 px-3 pt-2">
           {isAdminArea ? 'Administrace' : 'Firemní Portál'}
         </div>
-        {links.map((link) => (
-          <Link
-            key={link.href}
-            href={link.href}
-            className={cn(
-              "flex items-center gap-3 px-3 py-3 sm:py-2.5 rounded-lg transition-colors min-h-[44px] sm:min-h-0 touch-manipulation",
-              pathname === link.href || (pathname.startsWith(link.href) && link.href !== '/portal/dashboard' && link.href !== '/admin/dashboard')
-                ? "bg-sidebar-accent text-sidebar-primary font-medium" 
-                : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-primary"
-            )}
-          >
-            <link.icon className="w-5 h-5 shrink-0" />
-            <span className="truncate">{link.label}</span>
-          </Link>
-        ))}
+        {links.map((link) =>
+          mobileSheetClose ? (
+            <button
+              key={link.href}
+              type="button"
+              className={cn(
+                linkClass(link.href),
+                "w-full border-0 bg-transparent text-left font-[inherit]"
+              )}
+              onClick={() => handleMobileNav(link.href)}
+            >
+              <link.icon className="w-5 h-5 shrink-0" />
+              <span className="truncate">{link.label}</span>
+            </button>
+          ) : (
+            <Link key={link.href} href={link.href} className={linkClass(link.href)}>
+              <link.icon className="w-5 h-5 shrink-0" />
+              <span className="truncate">{link.label}</span>
+            </Link>
+          )
+        )}
       </nav>
 
       <div className="p-3 sm:p-4 mt-auto border-t border-sidebar-border shrink-0">
@@ -100,15 +136,33 @@ export const BizForgeSidebar = () => {
           <p className="text-[10px] text-sidebar-foreground/70 uppercase font-bold">Moje Role</p>
           <p className="text-xs font-semibold text-primary capitalize truncate">{role.replace('_', ' ')}</p>
         </div>
-        {isSuperAdmin && (
-          <Link 
-            href={isAdminArea ? '/portal/dashboard' : '/admin/dashboard'}
-            className="flex items-center gap-2 text-sm text-sidebar-foreground hover:text-primary transition-colors px-3 py-3 sm:py-2 border border-sidebar-border rounded-lg bg-sidebar-accent/50 min-h-[44px] sm:min-h-0 touch-manipulation"
-          >
-            <ShieldCheck className="w-4 h-4 shrink-0" />
-            <span className="truncate">Přepnout na {isAdminArea ? 'Portál' : 'Admin'}</span>
-          </Link>
-        )}
+        {isSuperAdmin &&
+          (mobileSheetClose ? (
+            <button
+              type="button"
+              className="flex w-full items-center gap-2 text-left text-sm text-sidebar-foreground hover:text-primary transition-colors px-3 py-3 sm:py-2 border border-sidebar-border rounded-lg bg-sidebar-accent/50 min-h-[44px] sm:min-h-0 touch-manipulation"
+              onClick={() =>
+                handleMobileNav(
+                  isAdminArea ? "/portal/dashboard" : "/admin/dashboard"
+                )
+              }
+            >
+              <ShieldCheck className="w-4 h-4 shrink-0" />
+              <span className="truncate">
+                Přepnout na {isAdminArea ? "Portál" : "Admin"}
+              </span>
+            </button>
+          ) : (
+            <Link
+              href={isAdminArea ? "/portal/dashboard" : "/admin/dashboard"}
+              className="flex items-center gap-2 text-sm text-sidebar-foreground hover:text-primary transition-colors px-3 py-3 sm:py-2 border border-sidebar-border rounded-lg bg-sidebar-accent/50 min-h-[44px] sm:min-h-0 touch-manipulation"
+            >
+              <ShieldCheck className="w-4 h-4 shrink-0" />
+              <span className="truncate">
+                Přepnout na {isAdminArea ? "Portál" : "Admin"}
+              </span>
+            </Link>
+          ))}
       </div>
     </div>
   );

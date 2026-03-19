@@ -6,7 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Loader2, Briefcase, Calendar, Building2, FileStack } from "lucide-react";
+import { Plus, Loader2, Briefcase, Calendar, Building2, FileStack, FileText } from "lucide-react";
 import { useFirestore, useCollection, useMemoFirebase, useUser, useDoc } from '@/firebase';
 import { collection, doc, addDoc, serverTimestamp, query, where, getDocs, setDoc } from 'firebase/firestore';
 import {
@@ -21,11 +21,14 @@ import {
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import type { JobTemplate, JobTemplateValues } from '@/lib/job-templates';
 import { JobTemplateFormFields } from '@/components/jobs/job-template-form-fields';
+import { WorkContractTemplatesManagerDialog } from '@/components/contracts/work-contract-templates-manager-dialog';
+
+const nativeSelectClass =
+  "flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-0 disabled:cursor-not-allowed disabled:opacity-50 min-h-[44px] sm:min-h-10";
 
 export default function JobsPage() {
   const { user } = useUser();
@@ -80,6 +83,14 @@ export default function JobsPage() {
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
   const [templateValues, setTemplateValues] = useState<JobTemplateValues>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [workContractTemplatesManagerOpen, setWorkContractTemplatesManagerOpen] =
+    useState(false);
+
+  useEffect(() => {
+    if (!isAdmin && workContractTemplatesManagerOpen) {
+      setWorkContractTemplatesManagerOpen(false);
+    }
+  }, [isAdmin, workContractTemplatesManagerOpen]);
 
   const selectedTemplate = selectedTemplateId ? (templates?.find(t => t.id === selectedTemplateId) as JobTemplate | undefined) : undefined;
 
@@ -253,6 +264,13 @@ export default function JobsPage() {
                   <FileStack className="w-4 h-4" /> Šablony
                 </Button>
               </Link>
+              <Button
+                type="button"
+                className="gap-2 min-h-[44px] bg-orange-500 hover:bg-orange-600 text-white border-0 shadow-md shadow-orange-500/25"
+                onClick={() => setWorkContractTemplatesManagerOpen(true)}
+              >
+                <FileText className="w-4 h-4" /> Šablony SOD
+              </Button>
               <Dialog open={isNewJobOpen} onOpenChange={setIsNewJobOpen}>
             <DialogTrigger asChild>
               <Button className="gap-2 min-h-[44px]">
@@ -273,20 +291,24 @@ export default function JobsPage() {
               >
                 {templates && templates.length > 0 && (
                   <div className="space-y-2">
-                    <Label>Šablona (volitelné)</Label>
-                    <Select value={selectedTemplateId || 'none'} onValueChange={v => { setSelectedTemplateId(v === 'none' ? '' : v); setTemplateValues({}); }}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Bez šablony" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-white border-slate-200 text-slate-900">
-                        <SelectItem value="none">Bez šablony</SelectItem>
-                        {templates.map((t) => (
-                          <SelectItem key={t.id} value={t.id!}>
-                            {t.name} {t.productType ? `(${t.productType})` : ''}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Label htmlFor="new-job-template">Šablona (volitelné)</Label>
+                    <select
+                      id="new-job-template"
+                      className={nativeSelectClass}
+                      value={selectedTemplateId || "none"}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        setSelectedTemplateId(v === "none" ? "" : v);
+                        setTemplateValues({});
+                      }}
+                    >
+                      <option value="none">Bez šablony</option>
+                      {templates.map((t) => (
+                        <option key={t.id} value={t.id!}>
+                          {t.name} {t.productType ? `(${t.productType})` : ""}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 )}
                 <div className="grid grid-cols-2 gap-4">
@@ -310,25 +332,30 @@ export default function JobsPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Zákazník</Label>
-                    <Select value={newJob.customerId} onValueChange={v => setNewJob({...newJob, customerId: v})}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Vyberte zákazníka" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-white border-slate-200 text-slate-900">
-                        {customers?.length ? (
-                          customers.map(c => (
-                            <SelectItem key={c.id} value={c.id}>
-                              {c.companyName || `${c.firstName} ${c.lastName}`}
-                            </SelectItem>
-                          ))
-                        ) : (
-                          <div className="p-2 text-xs text-center text-muted-foreground">
-                            Žádní zákazníci nenalezeni. <Link href="/portal/customers" className="text-primary hover:underline">Vytvořit?</Link>
-                          </div>
-                        )}
-                      </SelectContent>
-                    </Select>
+                    <Label htmlFor="new-job-customer">Zákazník</Label>
+                    <select
+                      id="new-job-customer"
+                      className={nativeSelectClass}
+                      value={newJob.customerId}
+                      onChange={(e) =>
+                        setNewJob({ ...newJob, customerId: e.target.value })
+                      }
+                    >
+                      <option value="">Vyberte zákazníka</option>
+                      {customers?.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.companyName || `${c.firstName || ""} ${c.lastName || ""}`.trim()}
+                        </option>
+                      ))}
+                    </select>
+                    {!customers?.length ? (
+                      <p className="text-xs text-muted-foreground">
+                        Žádní zákazníci.{" "}
+                        <Link href="/portal/customers" className="text-primary hover:underline">
+                          Vytvořit?
+                        </Link>
+                      </p>
+                    ) : null}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="budget">Rozpočet (Kč)</Label>
@@ -546,6 +573,14 @@ export default function JobsPage() {
           )}
         </CardContent>
       </Card>
+
+      <WorkContractTemplatesManagerDialog
+        open={workContractTemplatesManagerOpen}
+        onOpenChange={setWorkContractTemplatesManagerOpen}
+        firestore={firestore}
+        companyId={companyId}
+        userId={user?.uid}
+      />
     </div>
   );
 }

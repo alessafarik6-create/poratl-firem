@@ -11,7 +11,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { ShieldCheck, Loader2, Lock, Info } from "lucide-react";
+import { Loader2, Lock, Info } from "lucide-react";
+import { Logo } from "@/components/ui/logo";
+import { PLATFORM_NAME } from "@/lib/platform-brand";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
@@ -71,7 +73,7 @@ export default function AdminLoginPage() {
 
       toast({
         title: "Přihlášení úspěšné",
-        description: "Vítejte v globální administraci.",
+        description: `Vítejte v globální administraci ${PLATFORM_NAME}.`,
       });
 
       console.log("[AdminLoginPage] login success", { status: res.status });
@@ -92,13 +94,13 @@ export default function AdminLoginPage() {
       <div className="mx-auto w-full max-w-md space-y-6">
         <Card className="border-slate-200 bg-white shadow-xl">
           <CardHeader className="space-y-4 pt-8 text-center">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-primary shadow-lg shadow-primary/20">
-              <ShieldCheck className="h-10 w-10 text-white" />
+            <div className="mx-auto flex justify-center">
+              <Logo context="light" />
             </div>
 
             <div className="space-y-1">
               <CardTitle className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
-                Globální administrace
+                Globální administrace · {PLATFORM_NAME}
               </CardTitle>
               <CardDescription className="text-slate-600">
                 Přihlaste se do systémové administrace pomocí uživatelského jména

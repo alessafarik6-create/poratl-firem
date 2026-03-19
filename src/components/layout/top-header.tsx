@@ -16,6 +16,8 @@ import {
 import { Bell, Search, LogOut, User, Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Logo } from '@/components/ui/logo';
+import Link from 'next/link';
 import { signOut } from 'firebase/auth';
 import { doc } from 'firebase/firestore';
 
@@ -82,6 +84,13 @@ export const TopHeader = ({ onOpenMobileMenu }: TopHeaderProps) => {
             <Menu className="h-5 w-5" />
           </Button>
         )}
+        <Link
+          href={isAdminArea ? '/admin/dashboard' : '/portal/dashboard'}
+          className="hidden sm:flex shrink-0 mr-1 items-center"
+          aria-label="Přehled portálu"
+        >
+          <Logo variant="small" context="light" className="max-w-[140px] lg:max-w-[180px]" />
+        </Link>
         {companyName && (
           <div className="hidden md:flex items-center gap-2 text-slate-700 font-semibold truncate max-w-xs">
             <span className="truncate">{companyName}</span>

@@ -31,6 +31,7 @@ import { FirestorePermissionError } from '@/firebase/errors';
 import { useToast } from '@/hooks/use-toast';
 import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
+import { PLATFORM_NAME } from '@/lib/platform-brand';
 
 type AttendanceType = 'check_in' | 'break_start' | 'break_end' | 'check_out';
 type TerminalMode = 'personal' | 'pin' | 'qr';
@@ -263,7 +264,7 @@ export default function MobileTerminalPage() {
               <Smartphone className="text-white w-6 h-6" />
             </div>
             <div className="min-w-0">
-              <h1 className="text-xl font-bold leading-tight truncate">{companyName || 'BizForge Terminál'}</h1>
+              <h1 className="text-xl font-bold leading-tight truncate">{companyName || `${PLATFORM_NAME} · terminál`}</h1>
               <p className="text-xs text-muted-foreground uppercase font-bold tracking-tighter">Načítání…</p>
             </div>
           </div>
@@ -300,7 +301,7 @@ export default function MobileTerminalPage() {
           <div className="w-10 h-10 shrink-0 bg-primary rounded-lg flex items-center justify-center">
             <Smartphone className="text-white w-6 h-6" />
           </div>
-          <h1 className="text-xl font-bold truncate">{companyName || 'BizForge Terminál'}</h1>
+          <h1 className="text-xl font-bold truncate">{companyName || `${PLATFORM_NAME} · terminál`}</h1>
         </div>
         <Alert variant="destructive" className="mb-6">
           <AlertCircle className="h-4 w-4" />
@@ -329,7 +330,7 @@ export default function MobileTerminalPage() {
           <div className="w-10 h-10 shrink-0 bg-primary rounded-lg flex items-center justify-center">
             <Smartphone className="text-white w-6 h-6" />
           </div>
-          <h1 className="text-xl font-bold truncate">{companyName || 'BizForge Terminál'}</h1>
+          <h1 className="text-xl font-bold truncate">{companyName || `${PLATFORM_NAME} · terminál`}</h1>
         </div>
         <Alert className="mb-6">
           <Inbox className="h-4 w-4" />
@@ -360,7 +361,7 @@ export default function MobileTerminalPage() {
             <Smartphone className="text-white w-6 h-6" />
           </div>
           <div className="min-w-0">
-            <h1 className="text-xl font-bold leading-tight truncate">{companyName || 'BizForge Terminál'}</h1>
+            <h1 className="text-xl font-bold leading-tight truncate">{companyName || `${PLATFORM_NAME} · terminál`}</h1>
             <p className="text-xs text-muted-foreground uppercase font-bold tracking-tighter truncate">
               {companyName ? 'Docházkový terminál' : companyId}
             </p>

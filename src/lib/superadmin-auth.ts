@@ -6,8 +6,8 @@ const COOKIE_NAME = "superadmin_session";
 const JWT_SECRET_VALUE =
   process.env.SUPERADMIN_JWT_SECRET || "superadmin-secret-change-in-production";
 const JWT_SECRET = new TextEncoder().encode(JWT_SECRET_VALUE);
-const JWT_ISSUER = "bizforge-superadmin";
-const JWT_AUDIENCE = "bizforge-admin";
+const JWT_ISSUER = "rajmondata-superadmin";
+const JWT_AUDIENCE = "rajmondata-admin";
 const COOKIE_MAX_AGE = 60 * 60 * 24; // 24 hours
 
 export interface SuperadminSession {

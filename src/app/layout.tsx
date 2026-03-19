@@ -2,10 +2,14 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
+import {
+  PLATFORM_DESCRIPTION,
+  PLATFORM_METADATA_TITLE,
+} from '@/lib/platform-brand';
 
 export const metadata: Metadata = {
-  title: 'BizForge | Podnikový Portál',
-  description: 'Platforma pro správu podnikání a multi-tenant řešení',
+  title: PLATFORM_METADATA_TITLE,
+  description: PLATFORM_DESCRIPTION,
 };
 
 export default function RootLayout({

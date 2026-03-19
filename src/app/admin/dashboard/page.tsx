@@ -14,6 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
+import { PLATFORM_NAME } from "@/lib/platform-brand";
 
 type Company = {
   id: string;
@@ -84,7 +85,7 @@ export default function AdminDashboardPage() {
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Přehled platformy</h1>
         <p className="text-slate-600 mt-1">
-          Vítejte v globální administraci. Zde můžete spravovat organizace a licence.
+          Vítejte v globální administraci {PLATFORM_NAME}. Zde můžete spravovat organizace a licence.
         </p>
       </div>
 

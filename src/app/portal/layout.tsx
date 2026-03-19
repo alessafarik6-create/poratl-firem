@@ -31,8 +31,10 @@ export default function PortalLayout({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [authResolved, setAuthResolved] = useState(false);
 
+  /** Zavření až po navigaci — vyhneme se kolizi s portálem Sheet při změně route. */
   useEffect(() => {
-    setMobileMenuOpen(false);
+    const id = window.setTimeout(() => setMobileMenuOpen(false), 0);
+    return () => window.clearTimeout(id);
   }, [pathname]);
 
   const userRef = useMemoFirebase(
@@ -172,13 +174,15 @@ export default function PortalLayout({
         <BizForgeSidebar />
       </aside>
 
-      <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+      <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen} modal>
         <SheetContent
           side="left"
           className="w-[min(280px,85vw)] max-w-full p-0 bg-sidebar border-sidebar-border rounded-r-lg [&>button]:text-sidebar-foreground [&>button]:hover:bg-sidebar-accent [&>button]:hover:text-sidebar-primary"
         >
           <div className="flex flex-col h-full overflow-y-auto">
-            <BizForgeSidebar />
+            <BizForgeSidebar
+              mobileSheetClose={() => setMobileMenuOpen(false)}
+            />
           </div>
         </SheetContent>
       </Sheet>

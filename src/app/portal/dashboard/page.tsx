@@ -17,6 +17,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection, useCompany } from '@/firebase';
 import { doc, collection } from 'firebase/firestore';
 import Link from 'next/link';
+import { PLATFORM_NAME } from '@/lib/platform-brand';
 
 export default function CompanyDashboard() {
   const { user } = useUser();
@@ -139,6 +140,9 @@ export default function CompanyDashboard() {
             {isCustomer
               ? 'Vítejte ve svém klientském portálu.'
               : `Zde je přehled vaší práce v ${companyName || companyId || 'vaší organizaci'}.`}
+          </p>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
+            Platforma {PLATFORM_NAME}
           </p>
         </div>
         <div className="flex flex-wrap gap-2 sm:gap-3">

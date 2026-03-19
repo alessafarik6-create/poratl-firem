@@ -13,12 +13,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Building2,
-  Loader2,
-  UserPlus,
-  ShieldCheck,
-} from "lucide-react";
+import { Loader2, UserPlus, ShieldCheck } from "lucide-react";
+import { Logo } from "@/components/ui/logo";
+import { PLATFORM_NAME } from "@/lib/platform-brand";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -28,6 +25,10 @@ import {
   signInWithEmailAndPassword,
 } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
+
+function normalizeEmail(email: string): string {
+  return email.trim().toLowerCase();
+}
 
 export default function LoginPage() {
   const { auth, areServicesAvailable } = useFirebase();
@@ -54,7 +55,9 @@ export default function LoginPage() {
       return;
     }
 
-    if (!email || !password) {
+    const normalizedEmail = normalizeEmail(email);
+
+    if (!normalizedEmail || !password) {
       toast({
         variant: "destructive",
         title: "Chybějící údaje",
@@ -71,11 +74,11 @@ export default function LoginPage() {
         isMobileBrowser() ? browserLocalPersistence : browserSessionPersistence
       );
 
-      await signInWithEmailAndPassword(auth, email.trim(), password);
+      await signInWithEmailAndPassword(auth, normalizedEmail, password);
 
       toast({
         title: "Přihlášení úspěšné",
-        description: "Vítejte zpět v BizForge.",
+        description: `Vítejte zpět v ${PLATFORM_NAME}.`,
       });
 
       // Na mobilu je spolehlivější plný reload než router.push(),
@@ -99,7 +102,7 @@ export default function LoginPage() {
     <div className="min-h-screen grid lg:grid-cols-2">
       <div className="relative hidden bg-black lg:block">
         <Image
-          src="https://picsum.photos/seed/bizforge-login/1200/1200"
+          src="https://picsum.photos/seed/rajmondata-login/1200/1200"
           alt="Login pozadí"
           fill
           className="object-cover opacity-50"
@@ -108,7 +111,7 @@ export default function LoginPage() {
         <div className="absolute inset-0 bg-gradient-to-t from-black to-transparent" />
         <div className="absolute bottom-12 left-12 right-12">
           <h1 className="mb-4 text-4xl font-bold text-white">
-            Posílení podnikání s BizForge.
+            Posílení podnikání s {PLATFORM_NAME}.
           </h1>
           <p className="text-xl text-muted-foreground">
             Komplexní platforma pro správu firem a provozní dokonalost v
@@ -120,8 +123,8 @@ export default function LoginPage() {
       <div className="flex items-center justify-center bg-background p-8 text-foreground">
         <Card className="w-full max-w-md border-border bg-surface shadow-2xl">
           <CardHeader className="space-y-4 text-center">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-lg bg-primary shadow-lg shadow-primary/20">
-              <Building2 className="h-7 w-7 text-white" />
+            <div className="mx-auto flex justify-center">
+              <Logo context="page" />
             </div>
             <div className="space-y-1">
               <CardTitle className="text-3xl font-bold tracking-tight text-foreground">
