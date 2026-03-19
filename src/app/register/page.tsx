@@ -17,24 +17,169 @@ import { useToast } from '@/hooks/use-toast';
 import { ORGANIZATIONS_COLLECTION, COMPANIES_COLLECTION, USERS_COLLECTION } from '@/lib/firestore-collections';
 import { DEFAULT_LICENSE } from '@/lib/license-modules';
 
+type LookupCompanyAddress = {
+  street: string;
+  city: string;
+  postalCode: string;
+  country: string;
+  registeredAddressFull: string;
+};
+
+type LookupCompanyResult = {
+  ico: string;
+  companyName: string;
+  dic?: string | null;
+  legalForm?: string | null;
+  address: LookupCompanyAddress;
+  establishedAt?: string | null;
+};
+
 export default function RegisterPage() {
   const { auth, firestore: db, areServicesAvailable } = useFirebase();
   const router = useRouter();
   const { toast } = useToast();
   
   const [loading, setLoading] = useState(false);
+  // Prevent hydration mismatches for props like `disabled` that depend on client-only Firebase availability.
+  const [hasMounted, setHasMounted] = useState(false);
+  const [icoLookupLoading, setIcoLookupLoading] = useState(false);
+  const [icoLookupError, setIcoLookupError] = useState<string | null>(null);
+  const [icoLookupResults, setIcoLookupResults] = useState<LookupCompanyResult[]>([]);
+
   const [formData, setFormData] = useState({
     companyName: '',
     ico: '',
+    dic: '',
+    legalForm: '',
     adminName: '',
     email: '',
     password: '',
     phone: '',
-    address: ''
+    addressStreetAndNumber: '',
+    addressCity: '',
+    addressZip: '',
+    addressCountry: 'Česká republika',
+    registeredAddressFull: '',
+    establishedAt: ''
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.id]: e.target.value });
+  };
+
+  React.useEffect(() => {
+    setHasMounted(true);
+  }, []);
+
+  const validateIcoChecksum = (icoRaw: string): boolean => {
+    const ico = icoRaw.replace(/\s+/g, "");
+    if (!/^\d{8}$/.test(ico)) return false;
+    const digits = ico.split("").map((c) => Number(c));
+    const weights = [8, 7, 6, 5, 4, 3, 2];
+    const sum = weights.reduce((acc, w, idx) => acc + digits[idx] * w, 0);
+    const remainder = sum % 11;
+    let check: number;
+    if (remainder === 0) check = 1;
+    else if (remainder === 1) check = 0;
+    else check = 11 - remainder;
+    return check === digits[7];
+  };
+
+  const applyLookupResultToForm = (res: LookupCompanyResult) => {
+    setIcoLookupError(null);
+    setIcoLookupResults([res]);
+    setFormData((prev) => ({
+      ...prev,
+      companyName: res.companyName || prev.companyName,
+      ico: res.ico || prev.ico,
+      dic: res.dic ?? prev.dic,
+      legalForm: res.legalForm ?? prev.legalForm,
+      addressStreetAndNumber:
+        res.address.street || prev.addressStreetAndNumber,
+      addressCity: res.address.city || prev.addressCity,
+      addressZip: res.address.postalCode || prev.addressZip,
+      addressCountry: res.address.country || prev.addressCountry,
+      registeredAddressFull:
+        res.address.registeredAddressFull || prev.registeredAddressFull,
+      establishedAt: res.establishedAt ?? prev.establishedAt,
+    }));
+    toast({
+      title: "Údaje z ARES načteny",
+      description: `Vyplnili jsme data pro IČO ${res.ico}.`,
+    });
+  };
+
+  const lookupIcoFromRegistry = async () => {
+    const ico = formData.ico.replace(/\s+/g, "");
+    setIcoLookupError(null);
+
+    if (!/^\d{8}$/.test(ico)) {
+      const msg = "IČO musí obsahovat přesně 8 číslic.";
+      setIcoLookupError(msg);
+      toast({ variant: "destructive", title: "Neplatné IČO", description: msg });
+      return;
+    }
+
+    if (!validateIcoChecksum(ico)) {
+      const msg = "Neplatné IČO (kontrolní číslo nesedí).";
+      setIcoLookupError(msg);
+      toast({ variant: "destructive", title: "Neplatné IČO", description: msg });
+      return;
+    }
+
+    setIcoLookupLoading(true);
+    try {
+      const controller = new AbortController();
+      const t = setTimeout(() => controller.abort(), 13000);
+
+      const res = await fetch("/api/company-lookup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ico }),
+        signal: controller.signal,
+      });
+      clearTimeout(t);
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        const msg = data?.error || "Nepodařilo se načíst údaje z ARES.";
+        setIcoLookupError(msg);
+        toast({ variant: "destructive", title: "Chyba při načítání", description: msg });
+        return;
+      }
+
+      const results = (data?.results || []) as LookupCompanyResult[];
+
+      if (!results.length) {
+        const msg = "Firma nebyla nalezena.";
+        setIcoLookupResults([]);
+        setIcoLookupError(msg);
+        toast({ variant: "destructive", title: "Nenalezeno", description: msg });
+        return;
+      }
+
+      if (results.length === 1) {
+        applyLookupResultToForm(results[0]);
+        return;
+      }
+
+      setIcoLookupResults(results);
+      toast({
+        title: "Nalezeno více výsledků",
+        description: "Vyberte prosím správnou firmu ze seznamu.",
+      });
+    } catch (e: any) {
+      console.error("[register] lookupIco failed", e);
+      const msg =
+        e?.name === "AbortError"
+          ? "Timeout při načítání údajů z ARES."
+          : e?.message || "Nepodařilo se načíst údaje z ARES.";
+      setIcoLookupError(msg);
+      toast({ variant: "destructive", title: "Chyba při načítání", description: msg });
+    } finally {
+      setIcoLookupLoading(false);
+    }
   };
 
   const handleRegister = async (e: React.FormEvent) => {
@@ -46,6 +191,26 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
+      const street = formData.addressStreetAndNumber.trim();
+      const city = formData.addressCity.trim();
+      const zip = formData.addressZip.trim();
+      const country = formData.addressCountry.trim();
+
+      if (!street || !city || !zip || !country) {
+        toast({
+          variant: 'destructive',
+          title: 'Chybí adresa firmy',
+          description: 'Vyplňte prosím ulici a číslo, město, PSČ a stát.',
+        });
+        setLoading(false);
+        return;
+      }
+
+      const fullAddressBlock = [street, [zip, city].filter(Boolean).join(' '), country]
+        .filter(Boolean)
+        .join('\n')
+        .trim();
+
       // 1. Create Firebase Auth user
       const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
       const user = userCredential.user;
@@ -59,12 +224,27 @@ export default function RegisterPage() {
       const enabledModules = [...DEFAULT_LICENSE.enabledModules];
       const orgPayload = {
         id: companyId,
+        companyName: formData.companyName,
         name: formData.companyName,
         slug,
         email: formData.email,
         ico: formData.ico,
+        dic: formData.dic || null,
+        legalForm: formData.legalForm || null,
         phone: formData.phone ?? '',
-        address: formData.address ?? '',
+        address: fullAddressBlock,
+        registeredOfficeAddress: fullAddressBlock,
+        registeredAddressFull: fullAddressBlock,
+        companyAddressStreetAndNumber: street,
+        companyAddressCity: city,
+        companyAddressPostalCode: zip,
+        companyAddressCountry: country,
+        // Aliases for backward/forward compatibility.
+        addressStreet: street,
+        addressCity: city,
+        addressZip: zip,
+        addressCountry: country,
+        establishedAt: formData.establishedAt || null,
         ownerUserId: user.uid,
         createdBy: user.uid,
         active: true,
@@ -179,39 +359,166 @@ export default function RegisterPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="companyName">Název firmy</Label>
-                  <Input 
-                    id="companyName" 
-                    placeholder="Např. Kovovýroba s.r.o." 
+                  <Input
+                    id="companyName"
+                    placeholder="Např. Kovovýroba s.r.o."
                     value={formData.companyName}
                     onChange={handleChange}
                     className="bg-background border-border"
                     required
                   />
                 </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="ico">IČO</Label>
-                  <Input 
-                    id="ico" 
-                    placeholder="12345678" 
-                    value={formData.ico}
+                  <div className="flex gap-2 items-end">
+                    <Input
+                      id="ico"
+                      placeholder="12345678"
+                      value={formData.ico}
+                      onChange={handleChange}
+                      className="bg-background border-border"
+                      required
+                    />
+                    <Button
+                      type="button"
+                      className="min-h-[44px]"
+                      onClick={lookupIcoFromRegistry}
+                      disabled={icoLookupLoading}
+                    >
+                      {icoLookupLoading ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        "Načíst z ARES"
+                      )}
+                    </Button>
+                  </div>
+
+                  {icoLookupError ? (
+                    <p className="text-xs text-destructive">{icoLookupError}</p>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">
+                      Údaje po načtení můžete ručně upravit.
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="dic">DIČ</Label>
+                  <Input
+                    id="dic"
+                    placeholder="DIČ (pokud je dostupné)"
+                    value={formData.dic}
                     onChange={handleChange}
                     className="bg-background border-border"
-                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="legalForm">Právní forma</Label>
+                  <Input
+                    id="legalForm"
+                    placeholder="např. s.r.o., a.s., z.s."
+                    value={formData.legalForm}
+                    onChange={handleChange}
+                    className="bg-background border-border"
                   />
                 </div>
               </div>
 
+              {icoLookupResults.length > 1 && (
+                <div className="space-y-2">
+                  <Label>Vyberte správnou firmu</Label>
+                  <div className="flex flex-col gap-2">
+                    {icoLookupResults.map((r, idx) => (
+                      <Button
+                        key={`${r.ico}-${idx}`}
+                        type="button"
+                        variant="outline"
+                        onClick={() => applyLookupResultToForm(r)}
+                        disabled={icoLookupLoading}
+                        className="justify-start"
+                      >
+                        <span className="font-medium">{r.companyName}</span>
+                        {r.legalForm ? (
+                          <span className="text-muted-foreground ml-2">
+                            ({r.legalForm})
+                          </span>
+                        ) : null}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div className="space-y-2">
-                <Label htmlFor="address">Adresa firmy</Label>
-                <Input 
-                  id="address" 
-                  placeholder="Ulice, město, PSČ" 
-                  value={formData.address}
-                  onChange={handleChange}
-                  className="bg-background border-border"
-                  required
-                />
+                <Label>Kompletní adresa firmy</Label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="addressStreetAndNumber">
+                      Ulice a číslo popisné
+                    </Label>
+                    <Input
+                      id="addressStreetAndNumber"
+                      placeholder="Např. Hlavní 123"
+                      value={formData.addressStreetAndNumber}
+                      onChange={handleChange}
+                      className="bg-background border-border"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="addressCity">Město</Label>
+                    <Input
+                      id="addressCity"
+                      placeholder="Např. Praha"
+                      value={formData.addressCity}
+                      onChange={handleChange}
+                      className="bg-background border-border"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="addressZip">PSČ</Label>
+                    <Input
+                      id="addressZip"
+                      placeholder="11000"
+                      value={formData.addressZip}
+                      onChange={handleChange}
+                      className="bg-background border-border"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="addressCountry">Stát</Label>
+                    <Input
+                      id="addressCountry"
+                      placeholder="Česká republika"
+                      value={formData.addressCountry}
+                      onChange={handleChange}
+                      className="bg-background border-border"
+                      required
+                    />
+                  </div>
+                </div>
               </div>
+
+              {formData.establishedAt ? (
+                <div className="space-y-2">
+                  <Label htmlFor="establishedAt">Datum vzniku (volitelné)</Label>
+                  <Input
+                    id="establishedAt"
+                    value={formData.establishedAt}
+                    onChange={handleChange}
+                    className="bg-background border-border"
+                    placeholder="např. 1. ledna 2014"
+                  />
+                </div>
+              ) : null}
 
               <div className="separator flex items-center gap-4 py-2">
                 <div className="h-px bg-border flex-1" />
@@ -270,7 +577,14 @@ export default function RegisterPage() {
                 />
               </div>
 
-              <Button type="submit" className="w-full h-12 text-lg font-bold shadow-lg shadow-primary/20" disabled={loading || !areServicesAvailable}>
+              <Button
+                type="submit"
+                className="w-full h-12 text-lg font-bold shadow-lg shadow-primary/20"
+                disabled={
+                  // On SSR + very first client render, keep disabled stable to avoid hydration mismatch.
+                  !hasMounted ? false : Boolean(loading || !areServicesAvailable)
+                }
+              >
                 {loading ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : "Vytvořit firemní portál"}
               </Button>
             </CardContent>

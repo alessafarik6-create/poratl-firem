@@ -13,6 +13,8 @@ export type CompanyProfile = {
   email?: string;
   phone?: string;
   web?: string;
+  legalForm?: string;
+  establishedAt?: any;
   publicProfile?: boolean;
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
